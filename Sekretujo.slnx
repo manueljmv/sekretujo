@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Sekretujo.App/Sekretujo.App.csproj" />
     <Project Path="src/Sekretujo.Core/Sekretujo.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
