@@ -23,6 +23,7 @@ public static class ServiceConfiguration
         services.AddSingleton<VaultSession>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddTransient<UnlockViewModel>();
+        services.AddTransient<ShellViewModel>();
         services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();

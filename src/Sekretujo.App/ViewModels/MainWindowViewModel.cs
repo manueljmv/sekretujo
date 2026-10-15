@@ -14,8 +14,20 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(IServiceProvider services)
     {
         _services = services;
-        var unlock = services.GetRequiredService<UnlockViewModel>();
-        unlock.Unlocked += () => CurrentView = services.GetRequiredService<UnlockViewModel>();
+        ShowUnlock();
+    }
+
+    private void ShowUnlock()
+    {
+        var unlock = _services.GetRequiredService<UnlockViewModel>();
+        unlock.Unlocked += ShowShell;
         CurrentView = unlock;
+    }
+
+    private void ShowShell()
+    {
+        var shell = _services.GetRequiredService<ShellViewModel>();
+        shell.Locked += ShowUnlock;
+        CurrentView = shell;
     }
 }
