@@ -26,6 +26,34 @@ public class ImportExportServiceTests
     }
 
     [Fact]
+    public void ExportCsv_Then_ImportCsv_RoundTripsEntryWithEmbeddedNewline()
+    {
+        var service = new ImportExportService();
+        var items = new List<PasswordItem>
+        {
+            new() { Title = "Multiline", Notes = "line one\nline two" }
+        };
+
+        var csv = service.ExportCsv(items);
+        var imported = service.ImportCsv(csv);
+
+        Assert.Single(imported);
+        Assert.Equal("line one\nline two", imported[0].Notes);
+    }
+
+    [Fact]
+    public void ExportCsv_NeutralizesLeadingFormulaCharacters()
+    {
+        var service = new ImportExportService();
+        var items = new List<PasswordItem> { new() { Title = "=2+2", Password = "@SUM(A1)" } };
+
+        var csv = service.ExportCsv(items);
+
+        Assert.Contains("'=2+2", csv);
+        Assert.Contains("'@SUM(A1)", csv);
+    }
+
+    [Fact]
     public void ImportBitwardenJson_ParsesLoginItems()
     {
         var service = new ImportExportService();

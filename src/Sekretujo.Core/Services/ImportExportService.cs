@@ -100,6 +100,9 @@ public sealed class ImportExportService
 
     private static string CsvField(string value)
     {
+        if (value.Length > 0 && "=+-@\t".Contains(value[0]))
+            value = "'" + value;
+
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
@@ -108,42 +111,61 @@ public sealed class ImportExportService
     private static List<List<string>> ParseCsvRows(string csv)
     {
         var rows = new List<List<string>>();
-        using var reader = new StringReader(csv);
-        string? line;
-        while ((line = reader.ReadLine()) != null)
-        {
-            if (line.Length == 0) continue;
-            rows.Add(ParseCsvLine(line));
-        }
-        return rows;
-    }
-
-    private static List<string> ParseCsvLine(string line)
-    {
         var fields = new List<string>();
         var current = new StringBuilder();
         var inQuotes = false;
+        var rowHasContent = false;
 
-        for (var i = 0; i < line.Length; i++)
+        for (var i = 0; i < csv.Length; i++)
         {
-            var c = line[i];
+            var c = csv[i];
             if (inQuotes)
             {
                 if (c == '"')
                 {
-                    if (i + 1 < line.Length && line[i + 1] == '"') { current.Append('"'); i++; }
+                    if (i + 1 < csv.Length && csv[i + 1] == '"') { current.Append('"'); i++; }
                     else inQuotes = false;
                 }
                 else current.Append(c);
+                continue;
             }
-            else
+
+            switch (c)
             {
-                if (c == '"') inQuotes = true;
-                else if (c == ',') { fields.Add(current.ToString()); current.Clear(); }
-                else current.Append(c);
+                case '"':
+                    inQuotes = true;
+                    rowHasContent = true;
+                    break;
+                case ',':
+                    fields.Add(current.ToString());
+                    current.Clear();
+                    rowHasContent = true;
+                    break;
+                case '\r':
+                    break;
+                case '\n':
+                    if (rowHasContent || current.Length > 0 || fields.Count > 0)
+                    {
+                        fields.Add(current.ToString());
+                        rows.Add(fields);
+                        fields = new List<string>();
+                        current.Clear();
+                        rowHasContent = false;
+                    }
+                    break;
+                default:
+                    current.Append(c);
+                    rowHasContent = true;
+                    break;
             }
         }
-        fields.Add(current.ToString());
-        return fields;
+
+        if (current.Length > 0 || fields.Count > 0)
+        {
+            fields.Add(current.ToString());
+            rows.Add(fields);
+        }
+
+        return rows;
     }
 }
