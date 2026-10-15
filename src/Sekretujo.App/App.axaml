@@ -1,9 +1,16 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:styles="using:FluentAvalonia.Styling"
+             xmlns:vm="using:Sekretujo.App.ViewModels"
+             xmlns:views="using:Sekretujo.App.Views"
              x:Class="Sekretujo.App.App"
              RequestedThemeVariant="Dark">
   <Application.Styles>
     <styles:FluentAvaloniaTheme />
   </Application.Styles>
+  <Application.DataTemplates>
+    <DataTemplate x:DataType="{x:Type vm:UnlockViewModel}">
+      <views:UnlockView />
+    </DataTemplate>
+  </Application.DataTemplates>
 </Application>

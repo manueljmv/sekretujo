@@ -22,6 +22,8 @@ public static class ServiceConfiguration
         services.AddSingleton<ImportExportService>();
         services.AddSingleton<VaultSession>();
         services.AddSingleton<MainWindowViewModel>();
+        services.AddTransient<UnlockViewModel>();
+        services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();
     }
