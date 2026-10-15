@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Sekretujo.App.Services;
@@ -30,6 +31,12 @@ public partial class UnlockViewModel : ViewModelBase
     [ObservableProperty]
     private string _masterPasswordStrengthLabel = string.Empty;
 
+    [ObservableProperty]
+    private double _masterPasswordStrengthValue;
+
+    [ObservableProperty]
+    private IBrush _masterPasswordStrengthColor = Brushes.Transparent;
+
     public event Action? Unlocked;
 
     public UnlockViewModel(VaultRepository repository, VaultSession session, AppSettings appSettings,
@@ -45,15 +52,22 @@ public partial class UnlockViewModel : ViewModelBase
 
     partial void OnMasterPasswordChanged(string value)
     {
-        MasterPasswordStrengthLabel = string.IsNullOrEmpty(value)
-            ? string.Empty
-            : _strengthEstimator.Estimate(value) switch
+        if (string.IsNullOrEmpty(value))
+        {
+            MasterPasswordStrengthLabel = string.Empty;
+            MasterPasswordStrengthValue = 0;
+            MasterPasswordStrengthColor = Brushes.Transparent;
+            return;
+        }
+
+        (MasterPasswordStrengthLabel, MasterPasswordStrengthValue, MasterPasswordStrengthColor) =
+            _strengthEstimator.Estimate(value) switch
             {
-                PasswordStrength.VeryWeak => "Muy débil",
-                PasswordStrength.Weak => "Débil",
-                PasswordStrength.Medium => "Media",
-                PasswordStrength.Strong => "Fuerte",
-                _ => string.Empty
+                PasswordStrength.VeryWeak => ("Muy débil", 25d, (IBrush)Brushes.IndianRed),
+                PasswordStrength.Weak => ("Débil", 50d, (IBrush)Brushes.DarkOrange),
+                PasswordStrength.Medium => ("Media", 75d, (IBrush)Brushes.Goldenrod),
+                PasswordStrength.Strong => ("Fuerte", 100d, (IBrush)Brushes.ForestGreen),
+                _ => (string.Empty, 0d, (IBrush)Brushes.Transparent)
             };
     }
 
@@ -61,6 +75,12 @@ public partial class UnlockViewModel : ViewModelBase
     private void OpenExisting()
     {
         ErrorMessage = string.Empty;
+        if (string.IsNullOrWhiteSpace(VaultPath) || string.IsNullOrWhiteSpace(MasterPassword))
+        {
+            ErrorMessage = "Indica una ruta y una master password.";
+            return;
+        }
+
         try
         {
             var data = _repository.Load(VaultPath, MasterPassword);
@@ -94,7 +114,7 @@ public partial class UnlockViewModel : ViewModelBase
 
         if (File.Exists(VaultPath))
         {
-            ErrorMessage = "Ya existe un archivo en esa ruta. Usa \"Abrir vault\" para abrirlo, o elige otra ruta.";
+            ErrorMessage = "Ya existe un archivo en esa ruta. Usa \"Abrir...\" para abrirlo, o elige otra ruta.";
             return;
         }
 

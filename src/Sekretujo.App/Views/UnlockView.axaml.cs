@@ -27,8 +27,9 @@ public partial class UnlockView : UserControl
             FileTypeFilter = new[] { VaultFileType }
         });
 
-        if (files.Count > 0)
-            vm.VaultPath = files[0].Path.LocalPath;
+        if (files.Count == 0) return;
+        vm.VaultPath = files[0].Path.LocalPath;
+        vm.OpenExistingCommand.Execute(null);
     }
 
     private async void OnBrowseSaveClicked(object? sender, RoutedEventArgs e)
@@ -45,7 +46,8 @@ public partial class UnlockView : UserControl
             ShowOverwritePrompt = false
         });
 
-        if (file is not null)
-            vm.VaultPath = file.Path.LocalPath;
+        if (file is null) return;
+        vm.VaultPath = file.Path.LocalPath;
+        vm.CreateNewCommand.Execute(null);
     }
 }
