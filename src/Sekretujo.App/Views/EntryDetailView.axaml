@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Sekretujo.App.ViewModels"
+             x:Class="Sekretujo.App.Views.EntryDetailView"
+             x:DataType="vm:EntryDetailViewModel">
+  <StackPanel Spacing="8">
+    <TextBox PlaceholderText="Título" Text="{Binding Title}" />
+    <StackPanel IsVisible="{Binding !IsNote}" Spacing="8">
+      <TextBox PlaceholderText="Usuario" Text="{Binding Username}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox PlaceholderText="Password" Text="{Binding Password}" Width="240" />
+        <Button Content="Generar" Command="{Binding GeneratePasswordCommand}" />
+        <Button Content="Copiar" Command="{Binding CopyPasswordCommand}" />
+      </StackPanel>
+      <TextBox PlaceholderText="URL" Text="{Binding Url}" />
+      <TextBox PlaceholderText="Notas" Text="{Binding Notes}" AcceptsReturn="True" Height="80" />
+      <TextBox PlaceholderText="Secreto TOTP (Base32)" Text="{Binding TotpSecret}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{Binding TotpCodeDisplay}" />
+        <TextBlock Text="{Binding TotpErrorMessage}" Foreground="Red" />
+        <Button Content="Copiar TOTP" Command="{Binding CopyTotpCommand}" />
+      </StackPanel>
+    </StackPanel>
+    <TextBox IsVisible="{Binding IsNote}" PlaceholderText="Contenido" Text="{Binding Body}"
+             AcceptsReturn="True" Height="200" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Guardar" Command="{Binding SaveCommand}" />
+      <Button Content="Eliminar" Command="{Binding DeleteCommand}" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>
