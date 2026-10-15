@@ -25,6 +25,9 @@ public partial class ShellViewModel : ViewModelBase
     [ObservableProperty]
     private EntryDetailViewModel? _detail;
 
+    [ObservableProperty]
+    private SettingsViewModel? _settingsOverlay;
+
     public ObservableCollection<EntryListItemViewModel> Entries { get; } = new();
 
     public event Action? Locked;
@@ -63,6 +66,15 @@ public partial class ShellViewModel : ViewModelBase
 
     [RelayCommand]
     private void NewNote() => StartNewEntry(new Core.Models.NoteItem { Title = "Nueva nota" });
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        var settings = _services.GetRequiredService<SettingsViewModel>();
+        settings.Closed += () => SettingsOverlay = null;
+        settings.SettingsChanged += Refresh;
+        SettingsOverlay = settings;
+    }
 
     private void StartNewEntry(Core.Models.VaultEntry entry)
     {

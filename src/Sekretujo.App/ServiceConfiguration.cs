@@ -26,6 +26,7 @@ public static class ServiceConfiguration
         services.AddTransient<ShellViewModel>();
         services.AddSingleton<ClipboardAutoClearService>();
         services.AddTransient<EntryDetailViewModel>();
+        services.AddTransient<SettingsViewModel>();
         services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();
