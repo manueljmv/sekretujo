@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Sekretujo.App.Services;
@@ -48,6 +49,10 @@ public partial class UnlockViewModel : ViewModelBase
         {
             ErrorMessage = ex.Message;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ErrorMessage = $"No se pudo leer el archivo: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -60,9 +65,22 @@ public partial class UnlockViewModel : ViewModelBase
             return;
         }
 
-        var data = new VaultData();
-        _repository.Save(VaultPath, MasterPassword, data);
-        _session.Open(VaultPath, MasterPassword, data);
-        Unlocked?.Invoke();
+        if (File.Exists(VaultPath))
+        {
+            ErrorMessage = "Ya existe un archivo en esa ruta. Usa \"Abrir vault\" para abrirlo, o elige otra ruta.";
+            return;
+        }
+
+        try
+        {
+            var data = new VaultData();
+            _repository.Save(VaultPath, MasterPassword, data);
+            _session.Open(VaultPath, MasterPassword, data);
+            Unlocked?.Invoke();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ErrorMessage = $"No se pudo crear el archivo: {ex.Message}";
+        }
     }
 }

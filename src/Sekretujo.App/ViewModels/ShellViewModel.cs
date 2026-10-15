@@ -5,12 +5,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Sekretujo.App.Services;
+using Sekretujo.Core.Storage;
 
 namespace Sekretujo.App.ViewModels;
 
 public partial class ShellViewModel : ViewModelBase
 {
     private readonly VaultSession _session;
+    private readonly VaultRepository _repository;
     private readonly IServiceProvider _services;
 
     [ObservableProperty]
@@ -28,13 +30,17 @@ public partial class ShellViewModel : ViewModelBase
     [ObservableProperty]
     private SettingsViewModel? _settingsOverlay;
 
+    [ObservableProperty]
+    private string _statusMessage = string.Empty;
+
     public ObservableCollection<EntryListItemViewModel> Entries { get; } = new();
 
     public event Action? Locked;
 
-    public ShellViewModel(VaultSession session, IServiceProvider services)
+    public ShellViewModel(VaultSession session, VaultRepository repository, IServiceProvider services)
     {
         _session = session;
+        _repository = repository;
         _services = services;
         Refresh();
     }
@@ -44,9 +50,13 @@ public partial class ShellViewModel : ViewModelBase
 
     partial void OnSelectedEntryChanged(EntryListItemViewModel? value)
     {
+        Detail?.Dispose();
+
         if (value is null || _session.Data is null) { Detail = null; return; }
 
-        var entry = _session.Data.Entries.First(e => e.Id == value.Id);
+        var entry = _session.Data.Entries.FirstOrDefault(e => e.Id == value.Id);
+        if (entry is null) { Detail = null; return; }
+
         var detail = _services.GetRequiredService<EntryDetailViewModel>();
         detail.LoadFrom(entry);
         detail.Saved += OnEntrySaved;
@@ -79,8 +89,8 @@ public partial class ShellViewModel : ViewModelBase
     private void StartNewEntry(Core.Models.VaultEntry entry)
     {
         _session.Data!.Entries.Add(entry);
-        Refresh();
-        SelectedEntry = Entries.First(e => e.Id == entry.Id);
+        Persist();
+        Refresh(selectAfterRefresh: entry.Id);
     }
 
     private void OnEntrySaved(Core.Models.VaultEntry updated)
@@ -88,20 +98,45 @@ public partial class ShellViewModel : ViewModelBase
         if (_session.Data is null) return;
         var index = _session.Data.Entries.FindIndex(e => e.Id == updated.Id);
         if (index >= 0) _session.Data.Entries[index] = updated;
-        Refresh();
+        Persist();
+        Refresh(selectAfterRefresh: updated.Id);
     }
 
     private void OnEntryDeleted(Guid id)
     {
         _session.Data?.Entries.RemoveAll(e => e.Id == id);
+        Detail?.Dispose();
         Detail = null;
+        Persist();
         Refresh();
     }
 
-    public void Refresh()
+    private void Persist()
     {
+        if (_session.Data is null || _session.FilePath is null || _session.MasterPassword is null) return;
+        try
+        {
+            _repository.Save(_session.FilePath, _session.MasterPassword, _session.Data);
+            StatusMessage = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"No se pudo guardar el vault: {ex.Message}";
+        }
+    }
+
+    public void Refresh() => Refresh(selectAfterRefresh: null);
+
+    private void Refresh(Guid? selectAfterRefresh)
+    {
+        var preserveId = selectAfterRefresh ?? SelectedEntry?.Id;
+
         Entries.Clear();
-        if (_session.Data is null) return;
+        if (_session.Data is null)
+        {
+            SelectedEntry = null;
+            return;
+        }
 
         var query = _session.Data.Entries.AsEnumerable();
         if (FavoritesOnly)
@@ -111,5 +146,7 @@ public partial class ShellViewModel : ViewModelBase
 
         foreach (var entry in query)
             Entries.Add(new EntryListItemViewModel(entry));
+
+        SelectedEntry = preserveId is { } id ? Entries.FirstOrDefault(e => e.Id == id) : null;
     }
 }

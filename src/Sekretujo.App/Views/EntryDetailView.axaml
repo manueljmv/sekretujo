@@ -5,6 +5,7 @@
              x:DataType="vm:EntryDetailViewModel">
   <StackPanel Spacing="8">
     <TextBox PlaceholderText="Título" Text="{Binding Title}" />
+    <CheckBox Content="Favorito" IsChecked="{Binding IsFavorite}" />
     <StackPanel IsVisible="{Binding !IsNote}" Spacing="8">
       <TextBox PlaceholderText="Usuario" Text="{Binding Username}" />
       <StackPanel Orientation="Horizontal" Spacing="8">

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Input.Platform;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Sekretujo.App.Services;
@@ -9,15 +11,20 @@ using Sekretujo.Core.Services;
 
 namespace Sekretujo.App.ViewModels;
 
-public partial class EntryDetailViewModel : ViewModelBase
+public partial class EntryDetailViewModel : ViewModelBase, IDisposable
 {
     private readonly PasswordGeneratorService _generator;
     private readonly TotpService _totp;
     private readonly ClipboardAutoClearService _clipboardAutoClear;
+    private readonly AppSettings _appSettings;
+    private readonly DispatcherTimer _totpTimer;
     private IClipboard? _clipboard;
+    private List<string> _originalTags = new();
+    private DateTimeOffset _originalCreatedAt = DateTimeOffset.UtcNow;
 
     [ObservableProperty] private Guid _id;
     [ObservableProperty] private bool _isNote;
+    [ObservableProperty] private bool _isFavorite;
     [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
@@ -32,11 +39,14 @@ public partial class EntryDetailViewModel : ViewModelBase
     public event Action<Guid>? DeleteRequested;
 
     public EntryDetailViewModel(PasswordGeneratorService generator, TotpService totp,
-        ClipboardAutoClearService clipboardAutoClear)
+        ClipboardAutoClearService clipboardAutoClear, AppSettings appSettings)
     {
         _generator = generator;
         _totp = totp;
         _clipboardAutoClear = clipboardAutoClear;
+        _appSettings = appSettings;
+        _totpTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _totpTimer.Tick += (_, _) => RefreshTotp();
     }
 
     public void AttachClipboard(IClipboard clipboard) => _clipboard = clipboard;
@@ -45,6 +55,10 @@ public partial class EntryDetailViewModel : ViewModelBase
     {
         Id = entry.Id;
         Title = entry.Title;
+        IsFavorite = entry.IsFavorite;
+        _originalTags = entry.Tags;
+        _originalCreatedAt = entry.CreatedAt;
+
         if (entry is PasswordItem password)
         {
             IsNote = false;
@@ -62,11 +76,18 @@ public partial class EntryDetailViewModel : ViewModelBase
         }
     }
 
+    partial void OnTotpSecretChanged(string? value)
+    {
+        RefreshTotp();
+        if (string.IsNullOrWhiteSpace(value)) _totpTimer.Stop();
+        else _totpTimer.Start();
+    }
+
     private void RefreshTotp()
     {
         TotpErrorMessage = string.Empty;
         TotpCodeDisplay = string.Empty;
-        if (string.IsNullOrWhiteSpace(TotpSecret)) return;
+        if (string.IsNullOrWhiteSpace(TotpSecret)) { _totpTimer.Stop(); return; }
 
         try
         {
@@ -76,6 +97,7 @@ public partial class EntryDetailViewModel : ViewModelBase
         catch (InvalidTotpSecretException)
         {
             TotpErrorMessage = "Código TOTP inválido.";
+            _totpTimer.Stop();
         }
     }
 
@@ -87,7 +109,7 @@ public partial class EntryDetailViewModel : ViewModelBase
     private async Task CopyPassword()
     {
         if (_clipboard is not null)
-            await _clipboardAutoClear.CopyAndClear(_clipboard, Password, TimeSpan.FromSeconds(20));
+            await _clipboardAutoClear.CopyAndClear(_clipboard, Password, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
     }
 
     [RelayCommand]
@@ -97,7 +119,7 @@ public partial class EntryDetailViewModel : ViewModelBase
         try
         {
             var code = _totp.GetCode(TotpSecret);
-            await _clipboardAutoClear.CopyAndClear(_clipboard, code.Code, TimeSpan.FromSeconds(20));
+            await _clipboardAutoClear.CopyAndClear(_clipboard, code.Code, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
         }
         catch (InvalidTotpSecretException)
         {
@@ -109,7 +131,16 @@ public partial class EntryDetailViewModel : ViewModelBase
     private void Save()
     {
         VaultEntry entry = IsNote
-            ? new NoteItem { Id = Id, Title = Title, Body = Body, ModifiedAt = DateTimeOffset.UtcNow }
+            ? new NoteItem
+            {
+                Id = Id,
+                Title = Title,
+                Body = Body,
+                IsFavorite = IsFavorite,
+                Tags = _originalTags,
+                CreatedAt = _originalCreatedAt,
+                ModifiedAt = DateTimeOffset.UtcNow
+            }
             : new PasswordItem
             {
                 Id = Id,
@@ -119,6 +150,9 @@ public partial class EntryDetailViewModel : ViewModelBase
                 Url = Url,
                 Notes = Notes,
                 TotpSecret = TotpSecret,
+                IsFavorite = IsFavorite,
+                Tags = _originalTags,
+                CreatedAt = _originalCreatedAt,
                 ModifiedAt = DateTimeOffset.UtcNow
             };
         Saved?.Invoke(entry);
@@ -126,4 +160,6 @@ public partial class EntryDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private void Delete() => DeleteRequested?.Invoke(Id);
+
+    public void Dispose() => _totpTimer.Stop();
 }

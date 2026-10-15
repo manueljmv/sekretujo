@@ -28,6 +28,7 @@ public static class ServiceConfiguration
         services.AddTransient<EntryDetailViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<AutoLockService>();
+        services.AddSingleton<AppSettings>();
         services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();

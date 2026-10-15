@@ -11,15 +11,18 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly IServiceProvider _services;
     private readonly AutoLockService _autoLock;
     private readonly VaultSession _session;
+    private readonly AppSettings _appSettings;
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
 
-    public MainWindowViewModel(IServiceProvider services, AutoLockService autoLock, VaultSession session)
+    public MainWindowViewModel(IServiceProvider services, AutoLockService autoLock, VaultSession session,
+        AppSettings appSettings)
     {
         _services = services;
         _autoLock = autoLock;
         _session = session;
+        _appSettings = appSettings;
         _autoLock.TimedOut += () => Dispatcher.UIThread.Post(ShowUnlock);
         ShowUnlock();
     }
@@ -38,7 +41,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var shell = _services.GetRequiredService<ShellViewModel>();
         shell.Locked += ShowUnlock;
         CurrentView = shell;
-        _autoLock.Start(TimeSpan.FromMinutes(5));
+        _autoLock.Start(TimeSpan.FromMinutes(_appSettings.AutoLockMinutes));
     }
 
     public void NotifyActivity() => _autoLock.NotifyActivity();
