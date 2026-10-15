@@ -26,7 +26,7 @@ en Linux y Windows, con builds self-contained.
 | UI framework | Avalonia UI | Cross-platform real (Linux/Windows), nativo, sin WebView |
 | Theming | FluentAvalonia | Look Fluent/Windows 11 (Mica, esquinas redondeadas) listo para usar |
 | MVVM | CommunityToolkit.Mvvm | Ligero, source-generators, sin curva de ReactiveUI |
-| Runtime | .NET 8 (LTS) | Soporte largo plazo |
+| Runtime | .NET 10 (LTS) | Soporte largo plazo, última LTS |
 | Crypto KDF | Argon2id (`Konscious.Security.Cryptography`) | Resistente a GPU/ASIC, estándar actual |
 | Crypto cifrado | AES-256-GCM (`System.Security.Cryptography`) | AEAD, nativo en .NET, sin libs externas |
 | TOTP | `Otp.NET` | Implementación RFC 6238 madura |
@@ -112,7 +112,7 @@ Un único archivo `.vault` por base de datos de usuario:
 
 ## 10. Distribución
 
-- `dotnet publish -r linux-x64 --self-contained` y `-r win-x64 --self-contained`.
+- `dotnet publish -r linux-x64 --self-contained` y `-r win-x64 --self-contained` (TFM `net10.0`).
 - Empaquetado concreto (AppImage/.deb para Linux, instalador/portable para Windows) se
   define en el plan de implementación, no bloquea el diseño.
 
