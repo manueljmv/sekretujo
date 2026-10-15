@@ -6,3 +6,4 @@ dist/
 *.user
 
 .superpowers/
+.claude/

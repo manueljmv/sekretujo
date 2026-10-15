@@ -50,4 +50,12 @@ public class TotpServiceTests
 
         Assert.Throws<InvalidTotpSecretException>(() => service.GetCode("not-valid-base32!!"));
     }
+
+    [Fact]
+    public void GetCode_WithSecretThatDecodesTooShort_ThrowsInvalidTotpSecretException()
+    {
+        var service = new TotpService();
+
+        Assert.Throws<InvalidTotpSecretException>(() => service.GetCode("A"));
+    }
 }

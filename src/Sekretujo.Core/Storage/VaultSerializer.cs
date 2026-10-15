@@ -14,9 +14,13 @@ public sealed class VaultSerializer
             return JsonSerializer.Deserialize<VaultData>(plaintext)
                    ?? throw new VaultCorruptException("El vault está vacío o malformado.");
         }
-        catch (JsonException)
+        catch (VaultCorruptException)
         {
-            throw new VaultCorruptException("No se pudo interpretar el contenido del vault.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new VaultCorruptException("No se pudo interpretar el contenido del vault.", ex);
         }
     }
 }

@@ -39,4 +39,13 @@ public class VaultDataSerializationTests
 
         Assert.Throws<VaultCorruptException>(() => serializer.Deserialize(new byte[] { 1, 2, 3 }));
     }
+
+    [Fact]
+    public void Deserialize_EntryMissingTypeDiscriminator_ThrowsVaultCorruptException()
+    {
+        var serializer = new VaultSerializer();
+        var json = """{"SchemaVersion":1,"Entries":[{"Title":"No type"}],"Tags":[]}""";
+
+        Assert.Throws<VaultCorruptException>(() => serializer.Deserialize(System.Text.Encoding.UTF8.GetBytes(json)));
+    }
 }

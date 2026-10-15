@@ -42,7 +42,7 @@ public class ImportExportServiceTests
     }
 
     [Fact]
-    public void ExportCsv_NeutralizesLeadingFormulaCharacters()
+    public void ExportCsv_NeutralizesLeadingFormulaCharacters_ExceptInPassword()
     {
         var service = new ImportExportService();
         var items = new List<PasswordItem> { new() { Title = "=2+2", Password = "@SUM(A1)" } };
@@ -50,7 +50,21 @@ public class ImportExportServiceTests
         var csv = service.ExportCsv(items);
 
         Assert.Contains("'=2+2", csv);
-        Assert.Contains("'@SUM(A1)", csv);
+        Assert.DoesNotContain("'@SUM(A1)", csv);
+        Assert.Contains("@SUM(A1)", csv);
+    }
+
+    [Fact]
+    public void ExportCsv_Then_ImportCsv_PreservesPasswordStartingWithDash()
+    {
+        var service = new ImportExportService();
+        var items = new List<PasswordItem> { new() { Title = "Shop", Password = "-abc123" } };
+
+        var csv = service.ExportCsv(items);
+        var imported = service.ImportCsv(csv);
+
+        Assert.Single(imported);
+        Assert.Equal("-abc123", imported[0].Password);
     }
 
     [Fact]

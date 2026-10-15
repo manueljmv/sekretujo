@@ -13,7 +13,7 @@ public sealed class ImportExportService
         foreach (var item in items)
         {
             sb.AppendLine(string.Join(',',
-                CsvField(item.Title), CsvField(item.Username), CsvField(item.Password),
+                CsvField(item.Title), CsvField(item.Username), CsvField(item.Password, neutralizeFormulas: false),
                 CsvField(item.Url), CsvField(item.Notes), CsvField(string.Join(';', item.Tags))));
         }
         return sb.ToString();
@@ -98,9 +98,9 @@ public sealed class ImportExportService
     private static string Field(List<string> fields, int index) =>
         index >= 0 && index < fields.Count ? fields[index] : string.Empty;
 
-    private static string CsvField(string value)
+    private static string CsvField(string value, bool neutralizeFormulas = true)
     {
-        if (value.Length > 0 && "=+-@\t".Contains(value[0]))
+        if (neutralizeFormulas && value.Length > 0 && "=+-@\t".Contains(value[0]))
             value = "'" + value;
 
         if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
