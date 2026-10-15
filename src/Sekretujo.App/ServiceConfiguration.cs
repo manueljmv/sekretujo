@@ -27,6 +27,7 @@ public static class ServiceConfiguration
         services.AddSingleton<ClipboardAutoClearService>();
         services.AddTransient<EntryDetailViewModel>();
         services.AddTransient<SettingsViewModel>();
+        services.AddSingleton<AutoLockService>();
         services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();
