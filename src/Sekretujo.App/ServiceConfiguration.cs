@@ -28,7 +28,9 @@ public static class ServiceConfiguration
         services.AddTransient<EntryDetailViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddSingleton<AutoLockService>();
-        services.AddSingleton<AppSettings>();
+        services.AddSingleton<AppSettingsStore>();
+        services.AddSingleton(provider => provider.GetRequiredService<AppSettingsStore>().Load());
+        services.AddSingleton<PasswordStrengthEstimator>();
         services.AddSingleton<IServiceProvider>(provider => provider);
 
         return services.BuildServiceProvider();

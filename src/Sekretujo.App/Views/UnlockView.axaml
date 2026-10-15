@@ -5,8 +5,13 @@
              x:DataType="vm:UnlockViewModel">
   <StackPanel Spacing="12" Width="360" HorizontalAlignment="Center" VerticalAlignment="Center">
     <TextBlock Text="Sekretujo" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" />
-    <TextBox PlaceholderText="Ruta del archivo .vault" Text="{Binding VaultPath}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBox PlaceholderText="Ruta del archivo .vault" Text="{Binding VaultPath}" Width="230" />
+      <Button Content="Abrir..." Click="OnBrowseOpenClicked" />
+      <Button Content="Nuevo..." Click="OnBrowseSaveClicked" />
+    </StackPanel>
     <TextBox PlaceholderText="Master password" PasswordChar="•" Text="{Binding MasterPassword}" />
+    <TextBlock Text="{Binding MasterPasswordStrengthLabel}" />
     <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" />
     <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
       <Button Content="Abrir vault" Command="{Binding OpenExistingCommand}" />

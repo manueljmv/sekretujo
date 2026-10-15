@@ -17,6 +17,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     private readonly TotpService _totp;
     private readonly ClipboardAutoClearService _clipboardAutoClear;
     private readonly AppSettings _appSettings;
+    private readonly AppSettingsStore _appSettingsStore;
     private readonly DispatcherTimer _totpTimer;
     private IClipboard? _clipboard;
     private List<string> _originalTags = new();
@@ -34,19 +35,32 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _body = string.Empty;
     [ObservableProperty] private string _totpCodeDisplay = string.Empty;
     [ObservableProperty] private string _totpErrorMessage = string.Empty;
+    [ObservableProperty] private bool _isConfirmingDelete;
+    [ObservableProperty] private int _generatorLength;
+    [ObservableProperty] private bool _generatorUseUppercase;
+    [ObservableProperty] private bool _generatorUseLowercase;
+    [ObservableProperty] private bool _generatorUseDigits;
+    [ObservableProperty] private bool _generatorUseSymbols;
 
     public event Action<VaultEntry>? Saved;
     public event Action<Guid>? DeleteRequested;
 
     public EntryDetailViewModel(PasswordGeneratorService generator, TotpService totp,
-        ClipboardAutoClearService clipboardAutoClear, AppSettings appSettings)
+        ClipboardAutoClearService clipboardAutoClear, AppSettings appSettings, AppSettingsStore appSettingsStore)
     {
         _generator = generator;
         _totp = totp;
         _clipboardAutoClear = clipboardAutoClear;
         _appSettings = appSettings;
+        _appSettingsStore = appSettingsStore;
         _totpTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _totpTimer.Tick += (_, _) => RefreshTotp();
+
+        GeneratorLength = appSettings.GeneratorLength;
+        GeneratorUseUppercase = appSettings.GeneratorUseUppercase;
+        GeneratorUseLowercase = appSettings.GeneratorUseLowercase;
+        GeneratorUseDigits = appSettings.GeneratorUseDigits;
+        GeneratorUseSymbols = appSettings.GeneratorUseSymbols;
     }
 
     public void AttachClipboard(IClipboard clipboard) => _clipboard = clipboard;
@@ -102,8 +116,25 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private void GeneratePassword() =>
-        Password = _generator.Generate(new PasswordGeneratorOptions { Length = 24 });
+    private void GeneratePassword()
+    {
+        var options = new PasswordGeneratorOptions
+        {
+            Length = GeneratorLength,
+            UseUppercase = GeneratorUseUppercase,
+            UseLowercase = GeneratorUseLowercase,
+            UseDigits = GeneratorUseDigits,
+            UseSymbols = GeneratorUseSymbols
+        };
+        Password = _generator.Generate(options);
+
+        _appSettings.GeneratorLength = GeneratorLength;
+        _appSettings.GeneratorUseUppercase = GeneratorUseUppercase;
+        _appSettings.GeneratorUseLowercase = GeneratorUseLowercase;
+        _appSettings.GeneratorUseDigits = GeneratorUseDigits;
+        _appSettings.GeneratorUseSymbols = GeneratorUseSymbols;
+        _appSettingsStore.Save(_appSettings);
+    }
 
     [RelayCommand]
     private async Task CopyPassword()
@@ -159,7 +190,13 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private void Delete() => DeleteRequested?.Invoke(Id);
+    private void Delete() => IsConfirmingDelete = true;
+
+    [RelayCommand]
+    private void ConfirmDelete() => DeleteRequested?.Invoke(Id);
+
+    [RelayCommand]
+    private void CancelDelete() => IsConfirmingDelete = false;
 
     public void Dispose() => _totpTimer.Stop();
 }
