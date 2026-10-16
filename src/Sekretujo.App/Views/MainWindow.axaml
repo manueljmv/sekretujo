@@ -3,6 +3,8 @@
         xmlns:vm="using:Sekretujo.App.ViewModels"
         x:Class="Sekretujo.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Sekretujo" Width="1000" Height="650">
+        Title="Sekretujo" Width="1180" Height="720" MinWidth="900" MinHeight="560"
+        Icon="avares://Sekretujo.App/Assets/sekretujo.png"
+        Background="{StaticResource BrushBackground}">
   <ContentControl Content="{Binding CurrentView}" />
 </Window>

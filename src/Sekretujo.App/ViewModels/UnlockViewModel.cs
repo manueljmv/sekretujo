@@ -37,6 +37,9 @@ public partial class UnlockViewModel : ViewModelBase
     [ObservableProperty]
     private IBrush _masterPasswordStrengthColor = Brushes.Transparent;
 
+    [ObservableProperty]
+    private bool _isPasswordVisible;
+
     public event Action? Unlocked;
 
     public UnlockViewModel(VaultRepository repository, VaultSession session, AppSettings appSettings,

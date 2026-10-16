@@ -2,39 +2,129 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Sekretujo.App.ViewModels"
              xmlns:views="using:Sekretujo.App.Views"
+             xmlns:conv="using:Avalonia.Data.Converters"
              x:Class="Sekretujo.App.Views.ShellView"
-             x:DataType="vm:ShellViewModel">
+             x:DataType="vm:ShellViewModel"
+             x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="Button.entryRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="6,6" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
+    <Style Selector="Button.entryRow:pointerover">
+      <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+    </Style>
+    <Style Selector="Button.entryRow.selected">
+      <Setter Property="Background" Value="{StaticResource BrushAccentMuted}" />
+    </Style>
+  </UserControl.Styles>
   <Grid>
-    <Grid ColumnDefinitions="300,*" RowDefinitions="Auto,Auto,*">
-      <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8" Margin="8">
-        <TextBox PlaceholderText="Buscar..." Text="{Binding SearchText}" Width="200" />
-        <CheckBox Content="Solo favoritos" IsChecked="{Binding FavoritesOnly}" />
-        <Button Content="Nueva password" Command="{Binding NewPasswordCommand}" />
-        <Button Content="Nueva nota" Command="{Binding NewNoteCommand}" />
-        <Button Content="Ajustes" Command="{Binding OpenSettingsCommand}" />
-        <Button Content="Bloquear" Command="{Binding LockCommand}" HorizontalAlignment="Right" />
-      </StackPanel>
-      <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Margin="8,0" Foreground="Red" Text="{Binding StatusMessage}" />
-      <ListBox Grid.Row="2" Grid.Column="0" ItemsSource="{Binding Entries}"
-                SelectedItem="{Binding SelectedEntry}">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:EntryListItemViewModel">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <TextBlock Text="★" IsVisible="{Binding IsFavorite}" />
-              <TextBlock Text="{Binding Title}" />
-            </StackPanel>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-      <ContentControl Grid.Row="2" Grid.Column="1" Margin="12" Content="{Binding Detail}">
-        <ContentControl.DataTemplates>
-          <DataTemplate x:DataType="vm:EntryDetailViewModel">
-            <views:EntryDetailView />
-          </DataTemplate>
-        </ContentControl.DataTemplates>
-      </ContentControl>
+    <Grid RowDefinitions="Auto,Auto,*" Background="{StaticResource BrushBackground}">
+
+      <!-- Toolbar -->
+      <Border Grid.Row="0" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="16,12">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <TextBox PlaceholderText="Buscar..." Text="{Binding SearchText}" Width="220" />
+
+            <Border Background="{StaticResource BrushSurfaceAlt}" CornerRadius="8" Padding="2">
+              <StackPanel Orientation="Horizontal" Spacing="2">
+                <ToggleButton Classes="tab" Content="Todas" Command="{Binding SetTypeFilterCommand}"
+                              CommandParameter="{x:Static vm:EntryTypeFilter.All}"
+                              IsChecked="{Binding TypeFilter, Mode=OneWay, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter={x:Static vm:EntryTypeFilter.All}}" />
+                <ToggleButton Classes="tab" Content="Contraseñas" Command="{Binding SetTypeFilterCommand}"
+                              CommandParameter="{x:Static vm:EntryTypeFilter.Passwords}"
+                              IsChecked="{Binding TypeFilter, Mode=OneWay, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter={x:Static vm:EntryTypeFilter.Passwords}}" />
+                <ToggleButton Classes="tab" Content="Notas" Command="{Binding SetTypeFilterCommand}"
+                              CommandParameter="{x:Static vm:EntryTypeFilter.Notes}"
+                              IsChecked="{Binding TypeFilter, Mode=OneWay, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter={x:Static vm:EntryTypeFilter.Notes}}" />
+              </StackPanel>
+            </Border>
+
+            <ToggleButton Classes="star" IsChecked="{Binding FavoritesOnly}" ToolTip.Tip="Solo favoritos">
+              <TextBlock Text="&#9733;" />
+            </ToggleButton>
+
+            <Border Background="{StaticResource BrushSurfaceAlt}" CornerRadius="8" Padding="10,6"
+                    IsVisible="{Binding AutoLockDisplay, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+              <TextBlock Text="{Binding AutoLockDisplay}" FontSize="12" Foreground="{StaticResource BrushSuccess}" />
+            </Border>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button Classes="accent" Content="+ Password" Command="{Binding NewPasswordCommand}" />
+            <Button Content="+ Nota" Command="{Binding NewNoteCommand}" />
+            <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" ToolTip.Tip="Ajustes">
+              <TextBlock Text="&#9881;" />
+            </Button>
+            <Button Content="Bloquear" Command="{Binding LockCommand}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <TextBlock Grid.Row="1" Margin="16,8" Foreground="{StaticResource BrushDanger}" Text="{Binding StatusMessage}"
+                 IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+
+      <!-- Body -->
+      <Grid Grid.Row="2" ColumnDefinitions="300,*">
+        <DockPanel Grid.Column="0" Margin="12,12,6,12">
+          <TextBlock DockPanel.Dock="Top" Classes="eyebrow" Margin="6,0,0,10">
+            <Run Text="{Binding Entries.Count}" /><Run Text=" ENTRADAS" />
+          </TextBlock>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Groups}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:EntryGroupViewModel">
+                  <StackPanel Margin="0,0,0,14">
+                    <TextBlock Classes="eyebrow" Text="{Binding TagName}" Margin="6,0,0,6" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:EntryListItemViewModel">
+                          <Button Classes="entryRow" Classes.selected="{Binding IsSelected}"
+                                  Command="{Binding #Root.((vm:ShellViewModel)DataContext).SelectEntryCommand}"
+                                  CommandParameter="{Binding}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                              <Border Grid.Column="0" Width="34" Height="34" CornerRadius="8"
+                                      Background="{StaticResource BrushSurfaceRaised}" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Icon}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              </Border>
+                              <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                <TextBlock FontSize="12" Classes="muted">
+                                  <Run Text="{Binding TypeLabel}" /><Run Text=" · " /><Run Text="{Binding Subtitle}" />
+                                </TextBlock>
+                              </StackPanel>
+                              <TextBlock Grid.Column="2" Text="&#9733;" Foreground="{StaticResource BrushWarning}"
+                                         IsVisible="{Binding IsFavorite}" VerticalAlignment="Center" />
+                            </Grid>
+                          </Button>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+
+        <ContentControl Grid.Column="1" Margin="6,12,12,12" Content="{Binding Detail}">
+          <ContentControl.DataTemplates>
+            <DataTemplate x:DataType="vm:EntryDetailViewModel">
+              <views:EntryDetailView />
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+      </Grid>
     </Grid>
-    <Border Background="#CC202020"
+
+    <Border Background="#CC0A0A0D"
             IsVisible="{Binding SettingsOverlay, Converter={x:Static ObjectConverters.IsNotNull}}">
       <ContentControl Content="{Binding SettingsOverlay}" HorizontalAlignment="Center" VerticalAlignment="Center">
         <ContentControl.DataTemplates>

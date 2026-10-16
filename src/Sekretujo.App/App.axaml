@@ -7,6 +7,7 @@
              RequestedThemeVariant="Dark">
   <Application.Styles>
     <styles:FluentAvaloniaTheme />
+    <StyleInclude Source="avares://Sekretujo.App/Styles/Theme.axaml" />
   </Application.Styles>
   <Application.DataTemplates>
     <DataTemplate x:DataType="{x:Type vm:UnlockViewModel}">

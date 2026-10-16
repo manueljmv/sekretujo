@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Input.Platform;
+using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,10 +21,13 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     private readonly ClipboardAutoClearService _clipboardAutoClear;
     private readonly AppSettings _appSettings;
     private readonly AppSettingsStore _appSettingsStore;
+    private readonly PasswordStrengthEstimator _strengthEstimator;
     private readonly DispatcherTimer _totpTimer;
     private IClipboard? _clipboard;
-    private List<string> _originalTags = new();
+    private ILauncher? _launcher;
+    private VaultEntry? _originalEntry;
     private DateTimeOffset _originalCreatedAt = DateTimeOffset.UtcNow;
+    private bool _isLoading;
 
     [ObservableProperty] private Guid _id;
     [ObservableProperty] private bool _isNote;
@@ -31,28 +37,41 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _password = string.Empty;
     [ObservableProperty] private string _url = string.Empty;
     [ObservableProperty] private string _notes = string.Empty;
+    [ObservableProperty] private string _tagsText = string.Empty;
     [ObservableProperty] private string? _totpSecret;
     [ObservableProperty] private string _body = string.Empty;
-    [ObservableProperty] private string _totpCodeDisplay = string.Empty;
+    [ObservableProperty] private string _totpCode = string.Empty;
+    [ObservableProperty] private int _totpSecondsRemaining;
     [ObservableProperty] private string _totpErrorMessage = string.Empty;
     [ObservableProperty] private bool _isConfirmingDelete;
+    [ObservableProperty] private bool _isPasswordVisible;
+    [ObservableProperty] private bool _isDirty;
+    [ObservableProperty] private string _passwordStrengthLabel = string.Empty;
+    [ObservableProperty] private double _passwordStrengthValue;
+    [ObservableProperty] private IBrush _passwordStrengthColor = Brushes.Transparent;
     [ObservableProperty] private int _generatorLength;
     [ObservableProperty] private bool _generatorUseUppercase;
     [ObservableProperty] private bool _generatorUseLowercase;
     [ObservableProperty] private bool _generatorUseDigits;
     [ObservableProperty] private bool _generatorUseSymbols;
 
+    public const int TotpPeriodSeconds = 30;
+
+    public string TypeLabel => IsNote ? "Nota" : "Contraseña";
+
     public event Action<VaultEntry>? Saved;
     public event Action<Guid>? DeleteRequested;
 
     public EntryDetailViewModel(PasswordGeneratorService generator, TotpService totp,
-        ClipboardAutoClearService clipboardAutoClear, AppSettings appSettings, AppSettingsStore appSettingsStore)
+        ClipboardAutoClearService clipboardAutoClear, AppSettings appSettings, AppSettingsStore appSettingsStore,
+        PasswordStrengthEstimator strengthEstimator)
     {
         _generator = generator;
         _totp = totp;
         _clipboardAutoClear = clipboardAutoClear;
         _appSettings = appSettings;
         _appSettingsStore = appSettingsStore;
+        _strengthEstimator = strengthEstimator;
         _totpTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _totpTimer.Tick += (_, _) => RefreshTotp();
 
@@ -64,13 +83,16 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     }
 
     public void AttachClipboard(IClipboard clipboard) => _clipboard = clipboard;
+    public void AttachLauncher(ILauncher launcher) => _launcher = launcher;
 
     public void LoadFrom(VaultEntry entry)
     {
+        _isLoading = true;
+        _originalEntry = entry;
         Id = entry.Id;
         Title = entry.Title;
         IsFavorite = entry.IsFavorite;
-        _originalTags = entry.Tags;
+        TagsText = string.Join(", ", entry.Tags);
         _originalCreatedAt = entry.CreatedAt;
 
         if (entry is PasswordItem password)
@@ -88,6 +110,10 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
             IsNote = true;
             Body = note.Body;
         }
+
+        OnPropertyChanged(nameof(TypeLabel));
+        IsDirty = false;
+        _isLoading = false;
     }
 
     partial void OnTotpSecretChanged(string? value)
@@ -95,18 +121,56 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         RefreshTotp();
         if (string.IsNullOrWhiteSpace(value)) _totpTimer.Stop();
         else _totpTimer.Start();
+        MarkDirty();
+    }
+
+    partial void OnPasswordChanged(string value)
+    {
+        MarkDirty();
+        if (string.IsNullOrEmpty(value))
+        {
+            PasswordStrengthLabel = string.Empty;
+            PasswordStrengthValue = 0;
+            PasswordStrengthColor = Brushes.Transparent;
+            return;
+        }
+
+        (PasswordStrengthLabel, PasswordStrengthValue, PasswordStrengthColor) =
+            _strengthEstimator.Estimate(value) switch
+            {
+                PasswordStrength.VeryWeak => ("Muy débil", 25d, (IBrush)Brushes.IndianRed),
+                PasswordStrength.Weak => ("Débil", 50d, (IBrush)Brushes.DarkOrange),
+                PasswordStrength.Medium => ("Media", 75d, (IBrush)Brushes.Goldenrod),
+                PasswordStrength.Strong => ("Muy fuerte", 100d, (IBrush)Brushes.ForestGreen),
+                _ => (string.Empty, 0d, (IBrush)Brushes.Transparent)
+            };
+    }
+
+    partial void OnTitleChanged(string value) => MarkDirty();
+    partial void OnUsernameChanged(string value) => MarkDirty();
+    partial void OnUrlChanged(string value) => MarkDirty();
+    partial void OnNotesChanged(string value) => MarkDirty();
+    partial void OnBodyChanged(string value) => MarkDirty();
+    partial void OnTagsTextChanged(string value) => MarkDirty();
+    partial void OnIsFavoriteChanged(bool value) => MarkDirty();
+
+    private void MarkDirty()
+    {
+        if (!_isLoading) IsDirty = true;
     }
 
     private void RefreshTotp()
     {
         TotpErrorMessage = string.Empty;
-        TotpCodeDisplay = string.Empty;
+        TotpCode = string.Empty;
+        TotpSecondsRemaining = 0;
         if (string.IsNullOrWhiteSpace(TotpSecret)) { _totpTimer.Stop(); return; }
 
         try
         {
             var code = _totp.GetCode(TotpSecret);
-            TotpCodeDisplay = $"{code.Code} ({code.SecondsRemaining}s)";
+            TotpCode = $"{code.Code[..(code.Code.Length / 2)]} {code.Code[(code.Code.Length / 2)..]}";
+            TotpSecondsRemaining = code.SecondsRemaining;
         }
         catch (InvalidTotpSecretException)
         {
@@ -144,6 +208,20 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
+    private async Task CopyUsername()
+    {
+        if (_clipboard is not null) await _clipboard.SetTextAsync(Username);
+    }
+
+    [RelayCommand]
+    private async Task OpenUrl()
+    {
+        if (_launcher is null || string.IsNullOrWhiteSpace(Url)) return;
+        if (Uri.TryCreate(Url, UriKind.Absolute, out var uri))
+            await _launcher.LaunchUriAsync(uri);
+    }
+
+    [RelayCommand]
     private async Task CopyTotp()
     {
         if (_clipboard is null || string.IsNullOrWhiteSpace(TotpSecret)) return;
@@ -161,6 +239,9 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void Save()
     {
+        var tags = TagsText.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .ToList();
+
         VaultEntry entry = IsNote
             ? new NoteItem
             {
@@ -168,7 +249,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
                 Title = Title,
                 Body = Body,
                 IsFavorite = IsFavorite,
-                Tags = _originalTags,
+                Tags = tags,
                 CreatedAt = _originalCreatedAt,
                 ModifiedAt = DateTimeOffset.UtcNow
             }
@@ -182,11 +263,18 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
                 Notes = Notes,
                 TotpSecret = TotpSecret,
                 IsFavorite = IsFavorite,
-                Tags = _originalTags,
+                Tags = tags,
                 CreatedAt = _originalCreatedAt,
                 ModifiedAt = DateTimeOffset.UtcNow
             };
+        IsDirty = false;
         Saved?.Invoke(entry);
+    }
+
+    [RelayCommand]
+    private void Discard()
+    {
+        if (_originalEntry is not null) LoadFrom(_originalEntry);
     }
 
     [RelayCommand]

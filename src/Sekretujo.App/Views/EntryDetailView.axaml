@@ -1,45 +1,185 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Sekretujo.App.ViewModels"
+             xmlns:conv="using:Avalonia.Data.Converters"
              x:Class="Sekretujo.App.Views.EntryDetailView"
              x:DataType="vm:EntryDetailViewModel">
-  <StackPanel Spacing="8">
-    <TextBox PlaceholderText="Título" Text="{Binding Title}" />
-    <CheckBox Content="Favorito" IsChecked="{Binding IsFavorite}" />
-    <StackPanel IsVisible="{Binding !IsNote}" Spacing="8">
-      <TextBox PlaceholderText="Usuario" Text="{Binding Username}" />
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBox PlaceholderText="Password" Text="{Binding Password}" Width="240" />
-        <Button Content="Generar" Command="{Binding GeneratePasswordCommand}" />
-        <Button Content="Copiar" Command="{Binding CopyPasswordCommand}" />
+  <UserControl.Styles>
+    <Style Selector="TextBox.titleInput">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontSize" Value="26" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+    <Style Selector="TextBox.field">
+      <Setter Property="Padding" Value="12,10,44,10" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+    <!-- Header -->
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
+      <TextBox Grid.Column="0" Classes="titleInput" Text="{Binding Title}" />
+      <Border Grid.Column="1" Background="{StaticResource BrushSurfaceRaised}" CornerRadius="8"
+              Padding="10,4" VerticalAlignment="Top" Margin="0,0,8,0">
+        <TextBlock Text="{Binding TypeLabel}" FontSize="12" Classes="muted" />
+      </Border>
+      <ToggleButton Grid.Column="2" Classes="star" IsChecked="{Binding IsFavorite}" VerticalAlignment="Top">
+        <TextBlock Text="&#9733;" />
+      </ToggleButton>
+    </Grid>
+
+    <!-- Tags -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="0,0,0,12">
+      <TextBlock Grid.Column="0" Text="Tags" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                 Margin="0,0,10,0" />
+      <TextBox Grid.Column="1" Text="{Binding TagsText}" PlaceholderText="tag1, tag2, ..." />
+    </Grid>
+
+    <ScrollViewer Grid.Row="2">
+      <Grid ColumnDefinitions="*,340" IsVisible="{Binding !IsNote}">
+
+        <!-- Credenciales + generador -->
+        <Border Grid.Column="0" Classes="card" Margin="0,0,10,0" VerticalAlignment="Top">
+          <StackPanel Spacing="10">
+            <TextBlock Text="CREDENCIALES" Classes="eyebrow" />
+
+            <TextBlock Text="Usuario" Classes="muted" FontSize="12" />
+            <Grid>
+              <TextBox Classes="field" Text="{Binding Username}" />
+              <Button Classes="ghost" Command="{Binding CopyUsernameCommand}"
+                      HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                <TextBlock Text="&#128203;" FontSize="13" />
+              </Button>
+            </Grid>
+
+            <TextBlock Text="Password" Classes="muted" FontSize="12" Margin="0,6,0,0" />
+            <Grid>
+              <TextBox Classes="field" Text="{Binding Password}" PasswordChar="•"
+                        RevealPassword="{Binding IsPasswordVisible}" Padding="12,10,76,10" />
+              <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                          Margin="0,0,4,0">
+                <ToggleButton Classes="ghost" IsChecked="{Binding IsPasswordVisible}">
+                  <TextBlock Text="&#128065;" FontSize="13" />
+                </ToggleButton>
+                <Button Classes="ghost" Command="{Binding CopyPasswordCommand}">
+                  <TextBlock Text="&#128203;" FontSize="13" />
+                </Button>
+              </StackPanel>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto"
+                  IsVisible="{Binding PasswordStrengthLabel, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+              <ProgressBar Grid.Column="0" Minimum="0" Maximum="100" Height="6" VerticalAlignment="Center"
+                           Value="{Binding PasswordStrengthValue}" Foreground="{Binding PasswordStrengthColor}" />
+              <TextBlock Grid.Column="1" Margin="8,0,0,0" FontSize="12" Classes="muted"
+                         Text="{Binding PasswordStrengthLabel}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+              <TextBlock Grid.Column="0" Text="Generador" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="Generar" Command="{Binding GeneratePasswordCommand}" />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <TextBlock Grid.Column="0" Text="Longitud" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                         Margin="0,0,10,0" />
+              <Slider Grid.Column="1" Minimum="4" Maximum="128" Value="{Binding GeneratorLength}" />
+              <TextBlock Grid.Column="2" Text="{Binding GeneratorLength}" VerticalAlignment="Center"
+                         Margin="10,0,0,0" />
+            </Grid>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <ToggleButton Classes="chip" Content="A-Z" IsChecked="{Binding GeneratorUseUppercase}" />
+              <ToggleButton Classes="chip" Content="a-z" IsChecked="{Binding GeneratorUseLowercase}" />
+              <ToggleButton Classes="chip" Content="0-9" IsChecked="{Binding GeneratorUseDigits}" />
+              <ToggleButton Classes="chip" Content="!@#" IsChecked="{Binding GeneratorUseSymbols}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- TOTP + sitio web + notas -->
+        <StackPanel Grid.Column="1" Spacing="10">
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="VERIFICACIÓN EN DOS PASOS" Classes="eyebrow" />
+              <Grid ColumnDefinitions="*,Auto"
+                    IsVisible="{Binding TotpSecret, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Grid.Column="0" Text="{Binding TotpCode}" FontSize="26" FontWeight="Bold"
+                           TextWrapping="Wrap" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
+                  <Border Width="40" Height="40" CornerRadius="20" BorderThickness="2"
+                          BorderBrush="{StaticResource BrushAccent}" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding TotpSecondsRemaining}" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" FontSize="13" />
+                  </Border>
+                  <Button Content="Copiar" Command="{Binding CopyTotpCommand}" Padding="10,4" />
+                </StackPanel>
+              </Grid>
+              <TextBlock Classes="muted" FontSize="12" Text="Añade un secreto para generar códigos."
+                         IsVisible="{Binding TotpSecret, Converter={x:Static conv:StringConverters.IsNullOrEmpty}}" />
+              <TextBlock Text="{Binding TotpErrorMessage}" Foreground="{StaticResource BrushDanger}"
+                         FontSize="12" TextWrapping="Wrap"
+                         IsVisible="{Binding TotpErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+              <TextBlock Text="Secreto Base32" Classes="muted" FontSize="12" />
+              <TextBox Text="{Binding TotpSecret}" PasswordChar="•" RevealPassword="{Binding IsPasswordVisible}"
+                        PlaceholderText="Secreto TOTP (Base32)" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="SITIO WEB" Classes="eyebrow" />
+              <Grid>
+                <TextBox Classes="field" Text="{Binding Url}" />
+                <Button Classes="ghost" Command="{Binding OpenUrlCommand}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                  <TextBlock Text="&#8599;" FontSize="13" />
+                </Button>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="NOTAS" Classes="eyebrow" />
+              <TextBox Text="{Binding Notes}" AcceptsReturn="True" Height="90"
+                        PlaceholderText="Añade notas, códigos de recuperación..." />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+
+    <Border Grid.Row="2" Classes="card" IsVisible="{Binding IsNote}" VerticalAlignment="Stretch">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="CONTENIDO" Classes="eyebrow" Margin="0,0,0,10" />
+        <TextBox Text="{Binding Body}" AcceptsReturn="True" PlaceholderText="Contenido"
+                  VerticalContentAlignment="Top" />
+      </DockPanel>
+    </Border>
+
+    <!-- Footer -->
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" Margin="0,14,0,0"
+          IsVisible="{Binding !IsConfirmingDelete}">
+      <Button Grid.Column="0" Classes="danger" Content="Eliminar" Command="{Binding DeleteCommand}" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+        <Ellipse Width="8" Height="8" Fill="{StaticResource BrushWarning}" IsVisible="{Binding IsDirty}" />
+        <Ellipse Width="8" Height="8" Fill="{StaticResource BrushSuccess}" IsVisible="{Binding !IsDirty}" />
+        <TextBlock Text="Cambios sin guardar" Classes="muted" FontSize="12" IsVisible="{Binding IsDirty}" />
+        <TextBlock Text="Guardado" Classes="muted" FontSize="12" IsVisible="{Binding !IsDirty}" />
       </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="Longitud:" VerticalAlignment="Center" />
-        <NumericUpDown Value="{Binding GeneratorLength}" Minimum="4" Maximum="128" Width="110" />
-        <CheckBox Content="Mayúsculas" IsChecked="{Binding GeneratorUseUppercase}" />
-        <CheckBox Content="Minúsculas" IsChecked="{Binding GeneratorUseLowercase}" />
-        <CheckBox Content="Dígitos" IsChecked="{Binding GeneratorUseDigits}" />
-        <CheckBox Content="Símbolos" IsChecked="{Binding GeneratorUseSymbols}" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <Button Content="Descartar" Command="{Binding DiscardCommand}" IsEnabled="{Binding IsDirty}" />
+        <Button Classes="accent" Content="Guardar" Command="{Binding SaveCommand}" />
       </StackPanel>
-      <TextBox PlaceholderText="URL" Text="{Binding Url}" />
-      <TextBox PlaceholderText="Notas" Text="{Binding Notes}" AcceptsReturn="True" Height="80" />
-      <TextBox PlaceholderText="Secreto TOTP (Base32)" Text="{Binding TotpSecret}" />
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <TextBlock Text="{Binding TotpCodeDisplay}" />
-        <TextBlock Text="{Binding TotpErrorMessage}" Foreground="Red" />
-        <Button Content="Copiar TOTP" Command="{Binding CopyTotpCommand}" />
-      </StackPanel>
-    </StackPanel>
-    <TextBox IsVisible="{Binding IsNote}" PlaceholderText="Contenido" Text="{Binding Body}"
-             AcceptsReturn="True" Height="200" />
-    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsConfirmingDelete}">
-      <Button Content="Guardar" Command="{Binding SaveCommand}" />
-      <Button Content="Eliminar" Command="{Binding DeleteCommand}" />
-    </StackPanel>
-    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsConfirmingDelete}">
-      <TextBlock Text="¿Eliminar esta entrada?" VerticalAlignment="Center" />
-      <Button Content="Sí" Command="{Binding ConfirmDeleteCommand}" />
-      <Button Content="No" Command="{Binding CancelDeleteCommand}" />
-    </StackPanel>
-  </StackPanel>
+    </Grid>
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,Auto" Margin="0,14,0,0"
+          IsVisible="{Binding IsConfirmingDelete}">
+      <TextBlock Grid.Column="0" Text="¿Eliminar esta entrada?" VerticalAlignment="Center" Margin="0,0,10,0" />
+      <Button Grid.Column="1" Classes="danger" Content="Sí" Command="{Binding ConfirmDeleteCommand}"
+              Margin="0,0,8,0" />
+      <Button Grid.Column="2" Content="No" Command="{Binding CancelDeleteCommand}" />
+    </Grid>
+  </Grid>
 </UserControl>

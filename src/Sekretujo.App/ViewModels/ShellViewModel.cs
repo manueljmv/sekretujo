@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,17 +10,29 @@ using Sekretujo.Core.Storage;
 
 namespace Sekretujo.App.ViewModels;
 
+public enum EntryTypeFilter
+{
+    All,
+    Passwords,
+    Notes
+}
+
 public partial class ShellViewModel : ViewModelBase
 {
     private readonly VaultSession _session;
     private readonly VaultRepository _repository;
     private readonly IServiceProvider _services;
+    private readonly AutoLockService _autoLock;
+    private readonly DispatcherTimer _autoLockDisplayTimer;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
 
     [ObservableProperty]
     private bool _favoritesOnly;
+
+    [ObservableProperty]
+    private EntryTypeFilter _typeFilter = EntryTypeFilter.All;
 
     [ObservableProperty]
     private EntryListItemViewModel? _selectedEntry;
@@ -33,23 +46,51 @@ public partial class ShellViewModel : ViewModelBase
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
+    [ObservableProperty]
+    private string _autoLockDisplay = string.Empty;
+
     public ObservableCollection<EntryListItemViewModel> Entries { get; } = new();
+    public ObservableCollection<EntryGroupViewModel> Groups { get; } = new();
 
     public event Action? Locked;
 
-    public ShellViewModel(VaultSession session, VaultRepository repository, IServiceProvider services)
+    public ShellViewModel(VaultSession session, VaultRepository repository, IServiceProvider services,
+        AutoLockService autoLock)
     {
         _session = session;
         _repository = repository;
         _services = services;
+        _autoLock = autoLock;
+        _autoLockDisplayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _autoLockDisplayTimer.Tick += (_, _) => RefreshAutoLockDisplay();
+        _autoLockDisplayTimer.Start();
+        RefreshAutoLockDisplay();
         Refresh();
+    }
+
+    private void RefreshAutoLockDisplay()
+    {
+        var remaining = _autoLock.Remaining;
+        AutoLockDisplay = remaining is { } value
+            ? $"Autobloqueo en {(int)value.TotalMinutes}:{value.Seconds:D2}"
+            : string.Empty;
     }
 
     partial void OnSearchTextChanged(string value) => Refresh();
     partial void OnFavoritesOnlyChanged(bool value) => Refresh();
+    partial void OnTypeFilterChanged(EntryTypeFilter value) => Refresh();
+
+    [RelayCommand]
+    private void SetTypeFilter(EntryTypeFilter filter) => TypeFilter = filter;
+
+    [RelayCommand]
+    private void SelectEntry(EntryListItemViewModel entry) => SelectedEntry = entry;
 
     partial void OnSelectedEntryChanged(EntryListItemViewModel? value)
     {
+        foreach (var item in Entries)
+            item.IsSelected = ReferenceEquals(item, value);
+
         Detail?.Dispose();
 
         if (value is null || _session.Data is null) { Detail = null; return; }
@@ -67,6 +108,7 @@ public partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     private void Lock()
     {
+        _autoLockDisplayTimer.Stop();
         _session.Close();
         Locked?.Invoke();
     }
@@ -132,6 +174,7 @@ public partial class ShellViewModel : ViewModelBase
         var preserveId = selectAfterRefresh ?? SelectedEntry?.Id;
 
         Entries.Clear();
+        Groups.Clear();
         if (_session.Data is null)
         {
             SelectedEntry = null;
@@ -141,11 +184,35 @@ public partial class ShellViewModel : ViewModelBase
         var query = _session.Data.Entries.AsEnumerable();
         if (FavoritesOnly)
             query = query.Where(e => e.IsFavorite);
+        query = TypeFilter switch
+        {
+            EntryTypeFilter.Passwords => query.Where(e => e is Core.Models.PasswordItem),
+            EntryTypeFilter.Notes => query.Where(e => e is Core.Models.NoteItem),
+            _ => query
+        };
         if (!string.IsNullOrWhiteSpace(SearchText))
             query = query.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
-        foreach (var entry in query)
-            Entries.Add(new EntryListItemViewModel(entry));
+        var items = query.Select(e => new EntryListItemViewModel(e)).ToList();
+        foreach (var item in items)
+            Entries.Add(item);
+
+        const string untagged = "Sin etiqueta";
+        var byTag = items
+            .SelectMany(item => item.Tags.Count == 0
+                ? new[] { (Tag: untagged, Item: item) }
+                : item.Tags.Select(tag => (Tag: tag, Item: item)))
+            .GroupBy(x => x.Tag, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => string.Equals(g.Key, untagged, StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+            .ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var group in byTag)
+        {
+            var groupVm = new EntryGroupViewModel(group.Key);
+            foreach (var (_, item) in group)
+                groupVm.Items.Add(item);
+            Groups.Add(groupVm);
+        }
 
         SelectedEntry = preserveId is { } id ? Entries.FirstOrDefault(e => e.Id == id) : null;
     }
