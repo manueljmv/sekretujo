@@ -31,6 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _autoLock.Stop();
         _session.Close();
+        (CurrentView as IDisposable)?.Dispose();
         var unlock = _services.GetRequiredService<UnlockViewModel>();
         unlock.Unlocked += ShowShell;
         CurrentView = unlock;

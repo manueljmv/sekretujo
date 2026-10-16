@@ -17,7 +17,7 @@ public enum EntryTypeFilter
     Notes
 }
 
-public partial class ShellViewModel : ViewModelBase
+public partial class ShellViewModel : ViewModelBase, IDisposable
 {
     private readonly VaultSession _session;
     private readonly VaultRepository _repository;
@@ -108,9 +108,14 @@ public partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     private void Lock()
     {
-        _autoLockDisplayTimer.Stop();
         _session.Close();
         Locked?.Invoke();
+    }
+
+    public void Dispose()
+    {
+        _autoLockDisplayTimer.Stop();
+        Detail?.Dispose();
     }
 
     [RelayCommand]
