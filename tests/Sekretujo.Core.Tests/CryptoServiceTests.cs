@@ -28,6 +28,15 @@ public class CryptoServiceTests
     }
 
     [Fact]
+    public void Decrypt_WithEmptyPassword_ThrowsVaultUnlockException()
+    {
+        var crypto = new CryptoService();
+        var payload = crypto.Encrypt("correct-password", Encoding.UTF8.GetBytes("secret"));
+
+        Assert.Throws<VaultUnlockException>(() => crypto.Decrypt(string.Empty, payload));
+    }
+
+    [Fact]
     public void Decrypt_WithTamperedCiphertext_ThrowsVaultUnlockException()
     {
         var crypto = new CryptoService();

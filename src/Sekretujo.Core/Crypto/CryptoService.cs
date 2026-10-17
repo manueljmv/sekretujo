@@ -27,6 +27,9 @@ public sealed class CryptoService
 
     public byte[] Decrypt(string masterPassword, EncryptedPayload payload)
     {
+        if (string.IsNullOrEmpty(masterPassword))
+            throw new VaultUnlockException("Contraseña incorrecta o archivo corrupto.");
+
         var key = DeriveKey(masterPassword, payload.Salt);
         var plaintext = new byte[payload.Ciphertext.Length];
 
