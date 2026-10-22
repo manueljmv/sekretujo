@@ -1,18 +1,24 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Sekretujo.App.Views.VirtualKeyboardPanel">
-  <Border Classes="card" CornerRadius="0" BorderThickness="0,1,0,0" Padding="12">
-    <StackPanel Spacing="6">
-      <StackPanel x:Name="Row0Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
-      <StackPanel x:Name="Row1Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
-      <StackPanel x:Name="Row2Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
-      <StackPanel x:Name="Row3Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
-      <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
-        <ToggleButton x:Name="ShiftToggle" Content="Shift" Focusable="False" Click="OnShiftToggled" />
-        <Button Content="⌫" Focusable="False" Click="OnBackspaceClicked" />
-        <Button Content="Espacio" Width="200" Focusable="False" Click="OnSpaceClicked" />
-        <Button Content="Revolver" Focusable="False" Click="OnShuffleClicked" />
-        <Button Content="Restaurar" Focusable="False" Click="OnRestoreClicked" />
+  <Border Classes="card" CornerRadius="0" BorderThickness="0,1,0,0" Padding="0">
+    <StackPanel>
+      <Button x:Name="ToggleHeaderButton" Classes="ghost" Focusable="False" Click="OnToggleExpandClicked"
+              HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="6">
+        <TextBlock Text="⌨" FontSize="16" />
+      </Button>
+      <StackPanel x:Name="KeysPanel" Spacing="6" Margin="12,0,12,12" IsVisible="False">
+        <StackPanel x:Name="Row0Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
+        <StackPanel x:Name="Row1Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
+        <StackPanel x:Name="Row2Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
+        <StackPanel x:Name="Row3Panel" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+          <ToggleButton x:Name="ShiftToggle" Content="Shift" Focusable="False" Click="OnShiftToggled" />
+          <Button Content="⌫" Focusable="False" Click="OnBackspaceClicked" />
+          <Button Content="Espacio" Width="200" Focusable="False" Click="OnSpaceClicked" />
+          <Button Content="Revolver" Focusable="False" Click="OnShuffleClicked" />
+          <Button Content="Restaurar" Focusable="False" Click="OnRestoreClicked" />
+        </StackPanel>
       </StackPanel>
     </StackPanel>
   </Border>

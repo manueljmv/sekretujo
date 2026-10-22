@@ -7,13 +7,8 @@
         Title="Sekretujo" Width="1180" Height="720" MinWidth="900" MinHeight="560"
         Icon="avares://Sekretujo.App/Assets/sekretujo.png"
         Background="{StaticResource BrushBackground}">
-  <Grid>
-    <ContentControl Content="{Binding CurrentView}" />
-    <Button x:Name="KeyboardToggleButton" Classes="ghost" Focusable="False" Click="OnToggleKeyboardClicked"
-            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" ZIndex="10">
-      <TextBlock Text="⌨" FontSize="18" />
-    </Button>
-    <views:VirtualKeyboardPanel x:Name="KeyboardPanel" IsVisible="False"
-                                 HorizontalAlignment="Stretch" VerticalAlignment="Bottom" ZIndex="10" />
+  <Grid RowDefinitions="*,Auto">
+    <ContentControl Grid.Row="0" Content="{Binding CurrentView}" />
+    <views:VirtualKeyboardPanel x:Name="KeyboardPanel" Grid.Row="1" />
   </Grid>
 </Window>

@@ -27,9 +27,4 @@ public partial class MainWindow : Window
         if (e.Source is TextBox textBox)
             KeyboardPanel.SetActiveTextBox(textBox);
     }
-
-    private void OnToggleKeyboardClicked(object? sender, RoutedEventArgs e)
-    {
-        KeyboardPanel.IsVisible = !KeyboardPanel.IsVisible;
-    }
 }

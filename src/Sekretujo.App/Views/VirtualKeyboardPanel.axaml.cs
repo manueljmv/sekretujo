@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Sekretujo.Core.Services;
@@ -19,7 +20,35 @@ public partial class VirtualKeyboardPanel : UserControl
         BuildKeys();
     }
 
-    public void SetActiveTextBox(TextBox? textBox) => _activeTextBox = textBox;
+    public void SetActiveTextBox(TextBox? textBox)
+    {
+        if (_activeTextBox is not null)
+            _activeTextBox.DetachedFromVisualTree -= OnActiveTextBoxDetached;
+        _activeTextBox = textBox;
+        if (_activeTextBox is not null)
+            _activeTextBox.DetachedFromVisualTree += OnActiveTextBoxDetached;
+    }
+
+    private void OnActiveTextBoxDetached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (ReferenceEquals(sender, _activeTextBox))
+            _activeTextBox = null;
+    }
+
+    private void OnToggleExpandClicked(object? sender, RoutedEventArgs e)
+    {
+        var expanding = !KeysPanel.IsVisible;
+        KeysPanel.IsVisible = expanding;
+        if (expanding) ResetLayout();
+    }
+
+    private void ResetLayout()
+    {
+        _assignment = VirtualKeyboardLayout.CreateStandard();
+        _shiftOn = false;
+        ShiftToggle.IsChecked = false;
+        RefreshLabels();
+    }
 
     private void BuildKeys()
     {
