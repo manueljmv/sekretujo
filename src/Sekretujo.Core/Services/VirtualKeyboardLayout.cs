@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace Sekretujo.Core.Services;
 
 public sealed record VirtualKeyboardKey(string Normal, string Shifted, int Row);
@@ -24,10 +26,9 @@ public static class VirtualKeyboardLayout
 
     public static void Shuffle(IList<VirtualKeyboardKey> keys, Random? random = null)
     {
-        random ??= Random.Shared;
         for (var i = keys.Count - 1; i > 0; i--)
         {
-            var j = random.Next(i + 1);
+            var j = random?.Next(i + 1) ?? RandomNumberGenerator.GetInt32(i + 1);
             (keys[i], keys[j]) = (keys[j], keys[i]);
         }
     }
