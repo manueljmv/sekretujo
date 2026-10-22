@@ -1,10 +1,19 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Sekretujo.App.ViewModels"
+        xmlns:views="using:Sekretujo.App.Views"
         x:Class="Sekretujo.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Sekretujo" Width="1180" Height="720" MinWidth="900" MinHeight="560"
         Icon="avares://Sekretujo.App/Assets/sekretujo.png"
         Background="{StaticResource BrushBackground}">
-  <ContentControl Content="{Binding CurrentView}" />
+  <Grid>
+    <ContentControl Content="{Binding CurrentView}" />
+    <Button x:Name="KeyboardToggleButton" Classes="ghost" Focusable="False" Click="OnToggleKeyboardClicked"
+            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20" ZIndex="10">
+      <TextBlock Text="⌨" FontSize="18" />
+    </Button>
+    <views:VirtualKeyboardPanel x:Name="KeyboardPanel" IsVisible="False"
+                                 HorizontalAlignment="Stretch" VerticalAlignment="Bottom" ZIndex="10" />
+  </Grid>
 </Window>
