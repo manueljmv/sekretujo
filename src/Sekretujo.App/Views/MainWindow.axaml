@@ -1,10 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Sekretujo.App.ViewModels"
+        xmlns:views="using:Sekretujo.App.Views"
         x:Class="Sekretujo.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Sekretujo" Width="1180" Height="720" MinWidth="900" MinHeight="560"
         Icon="avares://Sekretujo.App/Assets/sekretujo.png"
         Background="{StaticResource BrushBackground}">
-  <ContentControl Content="{Binding CurrentView}" />
+  <Grid RowDefinitions="*,Auto">
+    <ContentControl Grid.Row="0" Content="{Binding CurrentView}" />
+    <views:VirtualKeyboardPanel x:Name="KeyboardPanel" Grid.Row="1" />
+  </Grid>
 </Window>
