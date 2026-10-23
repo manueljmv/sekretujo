@@ -18,12 +18,48 @@
     <Separator Margin="0,8" />
     <TextBox PlaceholderText="Ruta de archivo CSV/JSON" Text="{Binding FilePath}" />
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <Button Content="Exportar CSV" Command="{Binding ExportCsvCommand}" />
-      <Button Content="Importar CSV" Command="{Binding ImportCsvCommand}" />
+      <Button Command="{Binding ExportCsvCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Border Classes="icon" Width="14" Height="14">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/export.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
+          <TextBlock Text="Exportar CSV" />
+        </StackPanel>
+      </Button>
+      <Button Command="{Binding ImportCsvCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Border Classes="icon" Width="14" Height="14">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/import.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
+          <TextBlock Text="Importar CSV" />
+        </StackPanel>
+      </Button>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <Button Content="Importar Bitwarden" Command="{Binding ImportBitwardenCommand}" />
-      <Button Content="Importar KeePass" Command="{Binding ImportKeePassCommand}" />
+      <Button Command="{Binding ImportBitwardenCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Border Classes="icon" Width="14" Height="14">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/import.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
+          <TextBlock Text="Importar Bitwarden" />
+        </StackPanel>
+      </Button>
+      <Button Command="{Binding ImportKeePassCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Border Classes="icon" Width="14" Height="14">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/import.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
+          <TextBlock Text="Importar KeePass" />
+        </StackPanel>
+      </Button>
     </StackPanel>
     <TextBlock Text="{Binding StatusMessage}" />
     <Button Content="Cerrar" Command="{Binding CloseCommand}" />

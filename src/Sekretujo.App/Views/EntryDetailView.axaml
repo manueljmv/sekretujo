@@ -23,12 +23,16 @@
     <!-- Header -->
     <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,12">
       <TextBox Grid.Column="0" Classes="titleInput" Text="{Binding Title}" />
-      <Border Grid.Column="1" Background="{StaticResource BrushSurfaceRaised}" CornerRadius="8"
+      <Border Grid.Column="1" Background="{DynamicResource BrushSurfaceRaised}" CornerRadius="8"
               Padding="10,4" VerticalAlignment="Top" Margin="0,0,8,0">
         <TextBlock Text="{Binding TypeLabel}" FontSize="12" Classes="muted" />
       </Border>
       <ToggleButton Grid.Column="2" Classes="star" IsChecked="{Binding IsFavorite}" VerticalAlignment="Top">
-        <TextBlock Text="&#9733;" />
+        <Border Classes="icon" Width="14" Height="14">
+          <Border.OpacityMask>
+            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/star.png" Stretch="Uniform" />
+          </Border.OpacityMask>
+        </Border>
       </ToggleButton>
     </Grid>
 
@@ -52,21 +56,40 @@
               <TextBox Classes="field" Text="{Binding Username}" />
               <Button Classes="ghost" Command="{Binding CopyUsernameCommand}"
                       HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
-                <TextBlock Text="&#128203;" FontSize="13" />
+                <Border Classes="icon" Width="14" Height="14">
+                  <Border.OpacityMask>
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                  </Border.OpacityMask>
+                </Border>
               </Button>
             </Grid>
 
-            <TextBlock Text="Password" Classes="muted" FontSize="12" Margin="0,6,0,0" />
+            <TextBlock Text="Contraseña" Classes="muted" FontSize="12" Margin="0,6,0,0" />
             <Grid>
               <TextBox Classes="field" Text="{Binding Password}" PasswordChar="•"
                         RevealPassword="{Binding IsPasswordVisible}" Padding="12,10,76,10" />
               <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right" VerticalAlignment="Center"
                           Margin="0,0,4,0">
                 <ToggleButton Classes="ghost" IsChecked="{Binding IsPasswordVisible}">
-                  <TextBlock Text="&#128065;" FontSize="13" />
+                  <Panel>
+                    <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsPasswordVisible}">
+                      <Border.OpacityMask>
+                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                      </Border.OpacityMask>
+                    </Border>
+                    <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsPasswordVisible}">
+                      <Border.OpacityMask>
+                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                      </Border.OpacityMask>
+                    </Border>
+                  </Panel>
                 </ToggleButton>
                 <Button Classes="ghost" Command="{Binding CopyPasswordCommand}">
-                  <TextBlock Text="&#128203;" FontSize="13" />
+                  <Border Classes="icon" Width="14" Height="14">
+                    <Border.OpacityMask>
+                      <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                    </Border.OpacityMask>
+                  </Border>
                 </Button>
               </StackPanel>
             </Grid>
@@ -109,16 +132,25 @@
                            TextWrapping="Wrap" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
                   <Border Width="40" Height="40" CornerRadius="20" BorderThickness="2"
-                          BorderBrush="{StaticResource BrushAccent}" HorizontalAlignment="Center">
+                          BorderBrush="{DynamicResource BrushAccent}" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding TotpSecondsRemaining}" HorizontalAlignment="Center"
                                VerticalAlignment="Center" FontSize="13" />
                   </Border>
-                  <Button Content="Copiar" Command="{Binding CopyTotpCommand}" Padding="10,4" />
+                  <Button Command="{Binding CopyTotpCommand}" Padding="10,4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Border Classes="icon" Width="13" Height="13">
+                        <Border.OpacityMask>
+                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                        </Border.OpacityMask>
+                      </Border>
+                      <TextBlock Text="Copiar" />
+                    </StackPanel>
+                  </Button>
                 </StackPanel>
               </Grid>
               <TextBlock Classes="muted" FontSize="12" Text="Añade un secreto para generar códigos."
                          IsVisible="{Binding TotpSecret, Converter={x:Static conv:StringConverters.IsNullOrEmpty}}" />
-              <TextBlock Text="{Binding TotpErrorMessage}" Foreground="{StaticResource BrushDanger}"
+              <TextBlock Text="{Binding TotpErrorMessage}" Foreground="{DynamicResource BrushDanger}"
                          FontSize="12" TextWrapping="Wrap"
                          IsVisible="{Binding TotpErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
               <TextBlock Text="Secreto Base32" Classes="muted" FontSize="12" />
@@ -134,7 +166,11 @@
                 <TextBox Classes="field" Text="{Binding Url}" />
                 <Button Classes="ghost" Command="{Binding OpenUrlCommand}"
                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
-                  <TextBlock Text="&#8599;" FontSize="13" />
+                  <Border Classes="icon" Width="14" Height="14">
+                    <Border.OpacityMask>
+                      <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/external-link.png" Stretch="Uniform" />
+                    </Border.OpacityMask>
+                  </Border>
                 </Button>
               </Grid>
             </StackPanel>
@@ -162,10 +198,19 @@
     <!-- Footer -->
     <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" Margin="0,14,0,0"
           IsVisible="{Binding !IsConfirmingDelete}">
-      <Button Grid.Column="0" Classes="danger" Content="Eliminar" Command="{Binding DeleteCommand}" />
+      <Button Grid.Column="0" Classes="danger" Command="{Binding DeleteCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Border Classes="icon" Width="14" Height="14" Background="{DynamicResource BrushDanger}">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/delete.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
+          <TextBlock Text="Eliminar" />
+        </StackPanel>
+      </Button>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
-        <Ellipse Width="8" Height="8" Fill="{StaticResource BrushWarning}" IsVisible="{Binding IsDirty}" />
-        <Ellipse Width="8" Height="8" Fill="{StaticResource BrushSuccess}" IsVisible="{Binding !IsDirty}" />
+        <Ellipse Width="8" Height="8" Fill="{DynamicResource BrushWarning}" IsVisible="{Binding IsDirty}" />
+        <Ellipse Width="8" Height="8" Fill="{DynamicResource BrushSuccess}" IsVisible="{Binding !IsDirty}" />
         <TextBlock Text="Cambios sin guardar" Classes="muted" FontSize="12" IsVisible="{Binding IsDirty}" />
         <TextBlock Text="Guardado" Classes="muted" FontSize="12" IsVisible="{Binding !IsDirty}" />
       </StackPanel>

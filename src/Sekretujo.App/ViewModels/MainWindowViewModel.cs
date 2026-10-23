@@ -16,6 +16,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ViewModelBase? _currentView;
 
+    [ObservableProperty]
+    private string _windowTitle = "Sekretujo";
+
     public MainWindowViewModel(IServiceProvider services, AutoLockService autoLock, VaultSession session,
         AppSettings appSettings)
     {
@@ -35,6 +38,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var unlock = _services.GetRequiredService<UnlockViewModel>();
         unlock.Unlocked += ShowShell;
         CurrentView = unlock;
+        WindowTitle = "Sekretujo";
     }
 
     private void ShowShell()
@@ -43,6 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
         shell.Locked += ShowUnlock;
         CurrentView = shell;
         _autoLock.Start(TimeSpan.FromMinutes(_appSettings.AutoLockMinutes));
+        WindowTitle = _session.FilePath is null ? "Sekretujo" : $"Sekretujo — {_session.FilePath}";
     }
 
     public void NotifyActivity() => _autoLock.NotifyActivity();

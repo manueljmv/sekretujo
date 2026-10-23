@@ -4,9 +4,9 @@
         xmlns:views="using:Sekretujo.App.Views"
         x:Class="Sekretujo.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Sekretujo" Width="1180" Height="720" MinWidth="900" MinHeight="560"
+        Title="{Binding WindowTitle}" Width="1180" Height="720" MinWidth="900" MinHeight="560"
         Icon="avares://Sekretujo.App/Assets/sekretujo.png"
-        Background="{StaticResource BrushBackground}">
+        Background="{DynamicResource BrushBackground}">
   <Grid RowDefinitions="*,Auto">
     <ContentControl Grid.Row="0" Content="{Binding CurrentView}" />
     <views:VirtualKeyboardPanel x:Name="KeyboardPanel" Grid.Row="1" />

@@ -7,10 +7,13 @@
   <Grid RowDefinitions="*,Auto,Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
     <Border Grid.Row="0" Classes="card" Width="400" Padding="32">
       <StackPanel Spacing="14">
-        <Border Width="56" Height="56" CornerRadius="14" Background="{StaticResource BrushAccentMuted}"
+        <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource BrushAccentMuted}"
                 HorizontalAlignment="Center">
-          <TextBlock Text="&#128274;" FontSize="24" Foreground="{StaticResource BrushAccent}"
-                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <Border Classes="icon" Width="24" Height="24" Background="{DynamicResource BrushAccent}">
+            <Border.OpacityMask>
+              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/lock.png" Stretch="Uniform" />
+            </Border.OpacityMask>
+          </Border>
         </Border>
         <TextBlock Text="Sekretujo" Classes="heading" HorizontalAlignment="Center" />
         <TextBlock Text="Tu bóveda local, cifrada en este equipo" Classes="muted"
@@ -30,7 +33,18 @@
                     RevealPassword="{Binding IsPasswordVisible}" Padding="12,10,44,10" />
           <ToggleButton Classes="ghost" IsChecked="{Binding IsPasswordVisible}"
                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
-            <TextBlock Text="&#128065;" FontSize="14" />
+            <Panel>
+              <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsPasswordVisible}">
+                <Border.OpacityMask>
+                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                </Border.OpacityMask>
+              </Border>
+              <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsPasswordVisible}">
+                <Border.OpacityMask>
+                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                </Border.OpacityMask>
+              </Border>
+            </Panel>
           </ToggleButton>
         </Grid>
         <Grid ColumnDefinitions="*,Auto"
@@ -42,13 +56,17 @@
                      Text="{Binding MasterPasswordStrengthLabel}" />
         </Grid>
 
-        <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource BrushDanger}" TextWrapping="Wrap"
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource BrushDanger}" TextWrapping="Wrap"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
 
         <Button Classes="accent" Command="{Binding OpenExistingCommand}" HorizontalAlignment="Stretch"
                 HorizontalContentAlignment="Center" Margin="0,8,0,0">
           <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="&#128275;" />
+            <Border Classes="icon" Width="14" Height="14" Background="{DynamicResource BrushOnAccent}">
+              <Border.OpacityMask>
+                <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/unlock.png" Stretch="Uniform" />
+              </Border.OpacityMask>
+            </Border>
             <TextBlock Text="Desbloquear" FontWeight="Bold" />
           </StackPanel>
         </Button>

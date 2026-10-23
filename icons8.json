@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "icons": {
+    "pack": "m_outlined",
+    "sizes": [14, 16, 24],
+    "color": "currentColor",
+    "items": {
+      "settings": { "id": "82535", "commonName": "settings" },
+      "star": { "id": "96206", "commonName": "filled-star" },
+      "lock": { "id": "82747", "commonName": "lock" },
+      "unlock": { "id": "82705", "commonName": "unlock" },
+      "plus": { "id": "85479", "commonName": "plus" },
+      "copy": { "id": "86206", "commonName": "copy" },
+      "visible": { "id": "85028", "commonName": "visible" },
+      "invisible": { "id": "96151", "commonName": "invisible" },
+      "external-link": { "id": "82787", "commonName": "external-link" },
+      "delete": { "id": "82708", "commonName": "delete" },
+      "search": { "id": "82712", "commonName": "search" },
+      "expand-arrow": { "id": "85018", "commonName": "expand-arrow" },
+      "export": { "id": "86287", "commonName": "export" },
+      "import": { "id": "86326", "commonName": "import" }
+    }
+  }
+}

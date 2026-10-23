@@ -17,22 +17,30 @@
       <Setter Property="Margin" Value="0,0,0,2" />
     </Style>
     <Style Selector="Button.entryRow:pointerover">
-      <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+      <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}" />
     </Style>
     <Style Selector="Button.entryRow.selected">
-      <Setter Property="Background" Value="{StaticResource BrushAccentMuted}" />
+      <Setter Property="Background" Value="{DynamicResource BrushAccentMuted}" />
     </Style>
   </UserControl.Styles>
   <Grid>
-    <Grid RowDefinitions="Auto,Auto,*" Background="{StaticResource BrushBackground}">
+    <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource BrushBackground}">
 
       <!-- Toolbar -->
-      <Border Grid.Row="0" BorderBrush="{StaticResource BrushBorder}" BorderThickness="0,0,0,1" Padding="16,12">
+      <Border Grid.Row="0" BorderBrush="{DynamicResource BrushBorder}" BorderThickness="0,0,0,1" Padding="16,12">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-            <TextBox PlaceholderText="Buscar..." Text="{Binding SearchText}" Width="220" />
+            <Grid Width="220">
+              <TextBox PlaceholderText="Buscar..." Text="{Binding SearchText}" Padding="34,10,12,10" />
+              <Border Classes="icon" Background="{DynamicResource BrushTextMuted}" Margin="12,0,0,0"
+                      HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False">
+                <Border.OpacityMask>
+                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/search.png" Stretch="Uniform" />
+                </Border.OpacityMask>
+              </Border>
+            </Grid>
 
-            <Border Background="{StaticResource BrushSurfaceAlt}" CornerRadius="8" Padding="2">
+            <Border Background="{DynamicResource BrushSurfaceAlt}" CornerRadius="8" Padding="2">
               <StackPanel Orientation="Horizontal" Spacing="2">
                 <ToggleButton Classes="tab" Content="Todas" Command="{Binding SetTypeFilterCommand}"
                               CommandParameter="{x:Static vm:EntryTypeFilter.All}"
@@ -47,27 +55,62 @@
             </Border>
 
             <ToggleButton Classes="star" IsChecked="{Binding FavoritesOnly}" ToolTip.Tip="Solo favoritos">
-              <TextBlock Text="&#9733;" />
+              <Border Classes="icon" Width="14" Height="14">
+                <Border.OpacityMask>
+                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/star.png" Stretch="Uniform" />
+                </Border.OpacityMask>
+              </Border>
             </ToggleButton>
 
-            <Border Background="{StaticResource BrushSurfaceAlt}" CornerRadius="8" Padding="10,6"
+            <Border Background="{DynamicResource BrushSurfaceAlt}" CornerRadius="8" Padding="10,6"
                     IsVisible="{Binding AutoLockDisplay, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
-              <TextBlock Text="{Binding AutoLockDisplay}" FontSize="12" Foreground="{StaticResource BrushSuccess}" />
+              <TextBlock Text="{Binding AutoLockDisplay}" FontSize="12" Foreground="{DynamicResource BrushSuccess}" />
             </Border>
           </StackPanel>
 
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-            <Button Classes="accent" Content="+ Password" Command="{Binding NewPasswordCommand}" />
-            <Button Content="+ Nota" Command="{Binding NewNoteCommand}" />
-            <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" ToolTip.Tip="Ajustes">
-              <TextBlock Text="&#9881;" />
+            <Button Classes="accent" Command="{Binding NewPasswordCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Classes="icon" Width="14" Height="14" Background="{DynamicResource BrushOnAccent}">
+                  <Border.OpacityMask>
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                  </Border.OpacityMask>
+                </Border>
+                <TextBlock Text="Contraseña" />
+              </StackPanel>
             </Button>
-            <Button Content="Bloquear" Command="{Binding LockCommand}" />
+            <Button Command="{Binding NewNoteCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Classes="icon" Width="14" Height="14">
+                  <Border.OpacityMask>
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                  </Border.OpacityMask>
+                </Border>
+                <TextBlock Text="Nota" />
+              </StackPanel>
+            </Button>
+            <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" ToolTip.Tip="Ajustes">
+              <Border Classes="icon">
+                <Border.OpacityMask>
+                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/settings.png" Stretch="Uniform" />
+                </Border.OpacityMask>
+              </Border>
+            </Button>
+            <Button Command="{Binding LockCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Classes="icon" Width="14" Height="14">
+                  <Border.OpacityMask>
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/lock.png" Stretch="Uniform" />
+                  </Border.OpacityMask>
+                </Border>
+                <TextBlock Text="Bloquear" />
+              </StackPanel>
+            </Button>
           </StackPanel>
         </Grid>
       </Border>
 
-      <TextBlock Grid.Row="1" Margin="16,8" Foreground="{StaticResource BrushDanger}" Text="{Binding StatusMessage}"
+      <TextBlock Grid.Row="1" Margin="16,8" Foreground="{DynamicResource BrushDanger}" Text="{Binding StatusMessage}"
                  IsVisible="{Binding StatusMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
 
       <!-- Body -->
@@ -81,8 +124,26 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:EntryGroupViewModel">
                   <StackPanel Margin="0,0,0,14">
-                    <TextBlock Classes="eyebrow" Text="{Binding TagName}" Margin="6,0,0,6" />
-                    <ItemsControl ItemsSource="{Binding Items}">
+                    <Button Classes="entryRow" HorizontalContentAlignment="Stretch" Padding="6,4"
+                            Command="{Binding ToggleExpandedCommand}">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Classes="eyebrow" Text="{Binding TagName}" />
+                        <Border Grid.Column="2" Classes="icon" Width="12" Height="12"
+                                Background="{DynamicResource BrushTextMuted}" IsVisible="{Binding IsExpanded}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/expand-arrow.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                        <Border Grid.Column="2" Classes="icon" Width="12" Height="12"
+                                Background="{DynamicResource BrushTextMuted}" IsVisible="{Binding !IsExpanded}"
+                                RenderTransform="rotate(-90deg)">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/expand-arrow.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                      </Grid>
+                    </Button>
+                    <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding IsExpanded}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:EntryListItemViewModel">
                           <Button Classes="entryRow" Classes.selected="{Binding IsSelected}"
@@ -90,7 +151,7 @@
                                   CommandParameter="{Binding}">
                             <Grid ColumnDefinitions="Auto,*,Auto">
                               <Border Grid.Column="0" Width="34" Height="34" CornerRadius="8"
-                                      Background="{StaticResource BrushSurfaceRaised}" VerticalAlignment="Center">
+                                      Background="{DynamicResource BrushSurfaceRaised}" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Icon}" FontSize="14"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                               </Border>
@@ -100,8 +161,13 @@
                                   <Run Text="{Binding TypeLabel}" /><Run Text=" · " /><Run Text="{Binding Subtitle}" />
                                 </TextBlock>
                               </StackPanel>
-                              <TextBlock Grid.Column="2" Text="&#9733;" Foreground="{StaticResource BrushWarning}"
-                                         IsVisible="{Binding IsFavorite}" VerticalAlignment="Center" />
+                              <Border Grid.Column="2" Classes="icon" Width="13" Height="13"
+                                      Background="{DynamicResource BrushWarning}"
+                                      IsVisible="{Binding IsFavorite}" VerticalAlignment="Center">
+                                <Border.OpacityMask>
+                                  <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/star.png" Stretch="Uniform" />
+                                </Border.OpacityMask>
+                              </Border>
                             </Grid>
                           </Button>
                         </DataTemplate>

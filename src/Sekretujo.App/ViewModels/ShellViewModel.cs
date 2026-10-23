@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Avalonia.Threading;
@@ -24,6 +25,7 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private readonly IServiceProvider _services;
     private readonly AutoLockService _autoLock;
     private readonly DispatcherTimer _autoLockDisplayTimer;
+    private readonly HashSet<string> _collapsedTags = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -213,12 +215,23 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
 
         foreach (var group in byTag)
         {
-            var groupVm = new EntryGroupViewModel(group.Key);
+            var groupVm = new EntryGroupViewModel(group.Key) { IsExpanded = !_collapsedTags.Contains(group.Key) };
             foreach (var (_, item) in group)
                 groupVm.Items.Add(item);
+            groupVm.PropertyChanged += OnGroupPropertyChanged;
             Groups.Add(groupVm);
         }
 
         SelectedEntry = preserveId is { } id ? Entries.FirstOrDefault(e => e.Id == id) : null;
+    }
+
+    private void OnGroupPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(EntryGroupViewModel.IsExpanded) || sender is not EntryGroupViewModel group)
+            return;
+        if (group.IsExpanded)
+            _collapsedTags.Remove(group.TagName);
+        else
+            _collapsedTags.Add(group.TagName);
     }
 }
