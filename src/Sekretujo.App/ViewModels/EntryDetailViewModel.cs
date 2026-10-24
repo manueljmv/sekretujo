@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -43,6 +45,8 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _totpCode = string.Empty;
     [ObservableProperty] private int _totpSecondsRemaining;
     [ObservableProperty] private string _totpErrorMessage = string.Empty;
+    [ObservableProperty] private Bitmap? _totpQrCode;
+    [ObservableProperty] private bool _isTotpQrVisible;
     [ObservableProperty] private bool _isConfirmingDelete;
     [ObservableProperty] private bool _isPasswordVisible;
     [ObservableProperty] private bool _isDirty;
@@ -89,6 +93,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     {
         _isLoading = true;
         _originalEntry = entry;
+        IsTotpQrVisible = false;
         Id = entry.Id;
         Title = entry.Title;
         IsFavorite = entry.IsFavorite;
@@ -119,6 +124,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     partial void OnTotpSecretChanged(string? value)
     {
         RefreshTotp();
+        UpdateTotpQrCode();
         if (string.IsNullOrWhiteSpace(value)) _totpTimer.Stop();
         else _totpTimer.Start();
         MarkDirty();
@@ -146,7 +152,11 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
             };
     }
 
-    partial void OnTitleChanged(string value) => MarkDirty();
+    partial void OnTitleChanged(string value)
+    {
+        MarkDirty();
+        UpdateTotpQrCode();
+    }
     partial void OnUsernameChanged(string value) => MarkDirty();
     partial void OnUrlChanged(string value) => MarkDirty();
     partial void OnNotesChanged(string value) => MarkDirty();
@@ -176,6 +186,23 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         {
             TotpErrorMessage = "Código TOTP inválido.";
             _totpTimer.Stop();
+        }
+    }
+
+    private void UpdateTotpQrCode()
+    {
+        TotpQrCode?.Dispose();
+        TotpQrCode = null;
+        if (string.IsNullOrWhiteSpace(TotpSecret)) return;
+        try
+        {
+            var png = _totp.GenerateQrCodePng(TotpSecret, Title);
+            using var stream = new MemoryStream(png);
+            TotpQrCode = new Bitmap(stream);
+        }
+        catch (InvalidTotpSecretException)
+        {
+            // RefreshTotp already surfaces TotpErrorMessage for an invalid secret.
         }
     }
 
@@ -237,6 +264,13 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
+    private async Task CopyTotpSecret()
+    {
+        if (_clipboard is null || string.IsNullOrWhiteSpace(TotpSecret)) return;
+        await _clipboardAutoClear.CopyAndClear(_clipboard, TotpSecret, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+    }
+
+    [RelayCommand]
     private void Save()
     {
         var tags = TagsText.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
@@ -286,5 +320,9 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void CancelDelete() => IsConfirmingDelete = false;
 
-    public void Dispose() => _totpTimer.Stop();
+    public void Dispose()
+    {
+        _totpTimer.Stop();
+        TotpQrCode?.Dispose();
+    }
 }

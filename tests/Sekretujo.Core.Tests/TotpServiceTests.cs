@@ -58,4 +58,23 @@ public class TotpServiceTests
 
         Assert.Throws<InvalidTotpSecretException>(() => service.GetCode("A"));
     }
+
+    [Fact]
+    public void GenerateQrCodePng_ReturnsPngBytes()
+    {
+        var service = new TotpService();
+
+        var png = service.GenerateQrCodePng(ValidSecret, "example.com");
+
+        Assert.True(png.Length > 8);
+        Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, png[..4]);
+    }
+
+    [Fact]
+    public void GenerateQrCodePng_WithInvalidBase32Secret_ThrowsInvalidTotpSecretException()
+    {
+        var service = new TotpService();
+
+        Assert.Throws<InvalidTotpSecretException>(() => service.GenerateQrCodePng("not-valid-base32!!", "example.com"));
+    }
 }

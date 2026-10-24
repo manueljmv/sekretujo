@@ -1,4 +1,5 @@
 using OtpNet;
+using QRCoder;
 
 namespace Sekretujo.Core.Services;
 
@@ -25,5 +26,24 @@ public sealed class TotpService
         {
             throw new InvalidTotpSecretException("El secreto TOTP no es válido.", ex);
         }
+    }
+
+    public byte[] GenerateQrCodePng(string base32Secret, string label, string? issuer = null)
+    {
+        try
+        {
+            Base32Encoding.ToBytes(base32Secret);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        {
+            throw new InvalidTotpSecretException("El secreto TOTP no es válido.", ex);
+        }
+
+        var uri = $"otpauth://totp/{Uri.EscapeDataString(label)}?secret={base32Secret}";
+        if (!string.IsNullOrWhiteSpace(issuer)) uri += $"&issuer={Uri.EscapeDataString(issuer)}";
+
+        using var generator = new QRCodeGenerator();
+        var qrData = generator.CreateQrCode(uri, QRCodeGenerator.ECCLevel.Q);
+        return new PngByteQRCode(qrData).GetGraphic(20);
     }
 }

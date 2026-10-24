@@ -136,26 +136,57 @@
                     <TextBlock Text="{Binding TotpSecondsRemaining}" HorizontalAlignment="Center"
                                VerticalAlignment="Center" FontSize="13" />
                   </Border>
-                  <Button Command="{Binding CopyTotpCommand}" Padding="10,4">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                      <Border Classes="icon" Width="13" Height="13">
+                  <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
+                    <Button Classes="ghost" Command="{Binding CopyTotpCommand}">
+                      <Border Classes="icon" Width="14" Height="14">
                         <Border.OpacityMask>
                           <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
                         </Border.OpacityMask>
                       </Border>
-                      <TextBlock Text="Copiar" />
-                    </StackPanel>
-                  </Button>
+                    </Button>
+                    <ToggleButton Classes="ghost" IsChecked="{Binding IsTotpQrVisible}">
+                      <Panel>
+                        <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsTotpQrVisible}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                        <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsTotpQrVisible}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                      </Panel>
+                    </ToggleButton>
+                  </StackPanel>
                 </StackPanel>
               </Grid>
+              <StackPanel IsVisible="{Binding IsTotpQrVisible}" Spacing="8">
+                <Border HorizontalAlignment="Center" Padding="8" Background="White" CornerRadius="8">
+                  <Image Source="{Binding TotpQrCode}" Width="160" Height="160" />
+                </Border>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Grid.Column="0" Text="{Binding TotpSecret}" FontFamily="monospace"
+                             TextWrapping="Wrap" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Classes="ghost" Command="{Binding CopyTotpSecretCommand}">
+                    <Border Classes="icon" Width="14" Height="14">
+                      <Border.OpacityMask>
+                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                      </Border.OpacityMask>
+                    </Border>
+                  </Button>
+                </Grid>
+              </StackPanel>
               <TextBlock Classes="muted" FontSize="12" Text="Añade un secreto para generar códigos."
                          IsVisible="{Binding TotpSecret, Converter={x:Static conv:StringConverters.IsNullOrEmpty}}" />
               <TextBlock Text="{Binding TotpErrorMessage}" Foreground="{DynamicResource BrushDanger}"
                          FontSize="12" TextWrapping="Wrap"
                          IsVisible="{Binding TotpErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
-              <TextBlock Text="Secreto Base32" Classes="muted" FontSize="12" />
-              <TextBox Text="{Binding TotpSecret}" PasswordChar="•" RevealPassword="{Binding IsPasswordVisible}"
-                        PlaceholderText="Secreto TOTP (Base32)" />
+              <StackPanel Spacing="10" IsVisible="{Binding TotpSecret, Converter={x:Static conv:StringConverters.IsNullOrEmpty}}">
+                <TextBlock Text="Secreto Base32" Classes="muted" FontSize="12" />
+                <TextBox Text="{Binding TotpSecret}" PasswordChar="•" RevealPassword="{Binding IsPasswordVisible}"
+                          PlaceholderText="Secreto TOTP (Base32)" />
+              </StackPanel>
             </StackPanel>
           </Border>
 
