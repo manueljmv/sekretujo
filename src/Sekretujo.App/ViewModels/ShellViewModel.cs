@@ -198,7 +198,8 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
             _ => query
         };
         if (!string.IsNullOrWhiteSpace(SearchText))
-            query = query.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                || e.Tags.Any(tag => tag.Contains(SearchText, StringComparison.OrdinalIgnoreCase)));
 
         var items = query.Select(e => new EntryListItemViewModel(e)).ToList();
         foreach (var item in items)
