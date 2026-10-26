@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Sekretujo.Core.Crypto;
 using Sekretujo.Core.Models;
 
@@ -22,7 +23,15 @@ public sealed class VaultRepository
     public void Save(string path, string masterPassword, VaultData data)
     {
         var plaintext = _serializer.Serialize(data);
-        var payload = _crypto.Encrypt(masterPassword, plaintext);
+        EncryptedPayload payload;
+        try
+        {
+            payload = _crypto.Encrypt(masterPassword, plaintext);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
 
         using var buffer = new MemoryStream();
         buffer.Write(payload.Salt);
@@ -51,6 +60,13 @@ public sealed class VaultRepository
 
         var payload = new EncryptedPayload { Salt = salt, Nonce = nonce, Ciphertext = ciphertext, Tag = tag };
         var plaintext = _crypto.Decrypt(masterPassword, payload);
-        return _serializer.Deserialize(plaintext);
+        try
+        {
+            return _serializer.Deserialize(plaintext);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(plaintext);
+        }
     }
 }

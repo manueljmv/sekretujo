@@ -88,6 +88,7 @@ public partial class UnlockViewModel : ViewModelBase
         {
             var data = _repository.Load(VaultPath, MasterPassword);
             _session.Open(VaultPath, MasterPassword, data);
+            MasterPassword = string.Empty;
             RememberVaultPath();
             Unlocked?.Invoke();
         }
@@ -126,6 +127,7 @@ public partial class UnlockViewModel : ViewModelBase
             var data = new VaultData();
             _repository.Save(VaultPath, MasterPassword, data);
             _session.Open(VaultPath, MasterPassword, data);
+            MasterPassword = string.Empty;
             RememberVaultPath();
             Unlocked?.Invoke();
         }

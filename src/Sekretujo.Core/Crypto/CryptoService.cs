@@ -19,8 +19,15 @@ public sealed class CryptoService
         var ciphertext = new byte[plaintext.Length];
         var tag = new byte[TagSize];
 
-        using var aesGcm = new AesGcm(key, TagSize);
-        aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+        try
+        {
+            using var aesGcm = new AesGcm(key, TagSize);
+            aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
+        }
 
         return new EncryptedPayload { Salt = salt, Nonce = nonce, Ciphertext = ciphertext, Tag = tag };
     }
@@ -33,14 +40,19 @@ public sealed class CryptoService
         var key = DeriveKey(masterPassword, payload.Salt);
         var plaintext = new byte[payload.Ciphertext.Length];
 
-        using var aesGcm = new AesGcm(key, TagSize);
         try
         {
+            using var aesGcm = new AesGcm(key, TagSize);
             aesGcm.Decrypt(payload.Nonce, payload.Ciphertext, payload.Tag, plaintext);
         }
         catch (CryptographicException)
         {
+            CryptographicOperations.ZeroMemory(plaintext);
             throw new VaultUnlockException("Contraseña incorrecta o archivo corrupto.");
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(key);
         }
 
         return plaintext;
@@ -48,13 +60,21 @@ public sealed class CryptoService
 
     private static byte[] DeriveKey(string masterPassword, byte[] salt)
     {
-        using var argon2 = new Argon2id(Encoding.UTF8.GetBytes(masterPassword))
+        var passwordBytes = Encoding.UTF8.GetBytes(masterPassword);
+        try
         {
-            Salt = salt,
-            DegreeOfParallelism = 4,
-            MemorySize = 65536,
-            Iterations = 3
-        };
-        return argon2.GetBytes(KeySize);
+            using var argon2 = new Argon2id(passwordBytes)
+            {
+                Salt = salt,
+                DegreeOfParallelism = 4,
+                MemorySize = 65536,
+                Iterations = 3
+            };
+            return argon2.GetBytes(KeySize);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(passwordBytes);
+        }
     }
 }
