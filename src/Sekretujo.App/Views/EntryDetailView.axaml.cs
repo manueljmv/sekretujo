@@ -8,12 +8,15 @@ public partial class EntryDetailView : UserControl
     public EntryDetailView()
     {
         InitializeComponent();
-        DataContextChanged += (_, _) =>
-        {
-            if (DataContext is not EntryDetailViewModel vm) return;
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel?.Clipboard is { } clipboard) vm.AttachClipboard(clipboard);
-            if (topLevel?.Launcher is { } launcher) vm.AttachLauncher(launcher);
-        };
+        DataContextChanged += (_, _) => AttachTopLevelServices();
+        AttachedToVisualTree += (_, _) => AttachTopLevelServices();
+    }
+
+    private void AttachTopLevelServices()
+    {
+        if (DataContext is not EntryDetailViewModel vm) return;
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.Clipboard is { } clipboard) vm.AttachClipboard(clipboard);
+        if (topLevel?.Launcher is { } launcher) vm.AttachLauncher(launcher);
     }
 }

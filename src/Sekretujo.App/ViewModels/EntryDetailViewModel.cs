@@ -30,6 +30,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     private VaultEntry? _originalEntry;
     private DateTimeOffset _originalCreatedAt = DateTimeOffset.UtcNow;
     private bool _isLoading;
+    private int _copiedVersion;
 
     [ObservableProperty] private Guid _id;
     [ObservableProperty] private bool _isNote;
@@ -50,6 +51,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isConfirmingDelete;
     [ObservableProperty] private bool _isPasswordVisible;
     [ObservableProperty] private bool _isDirty;
+    [ObservableProperty] private string? _copiedField;
     [ObservableProperty] private string _passwordStrengthLabel = string.Empty;
     [ObservableProperty] private double _passwordStrengthValue;
     [ObservableProperty] private IBrush _passwordStrengthColor = Brushes.Transparent;
@@ -230,14 +232,17 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task CopyPassword()
     {
-        if (_clipboard is not null)
-            await _clipboardAutoClear.CopyAndClear(_clipboard, Password, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+        if (_clipboard is null) return;
+        await _clipboardAutoClear.CopyAndClear(_clipboard, Password, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+        await ShowCopied(nameof(Password));
     }
 
     [RelayCommand]
     private async Task CopyUsername()
     {
-        if (_clipboard is not null) await _clipboard.SetTextAsync(Username);
+        if (_clipboard is null) return;
+        await _clipboard.SetTextAsync(Username);
+        await ShowCopied(nameof(Username));
     }
 
     [RelayCommand]
@@ -256,6 +261,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         {
             var code = _totp.GetCode(TotpSecret);
             await _clipboardAutoClear.CopyAndClear(_clipboard, code.Code, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+            await ShowCopied(nameof(TotpCode));
         }
         catch (InvalidTotpSecretException)
         {
@@ -268,6 +274,15 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     {
         if (_clipboard is null || string.IsNullOrWhiteSpace(TotpSecret)) return;
         await _clipboardAutoClear.CopyAndClear(_clipboard, TotpSecret, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+        await ShowCopied(nameof(TotpSecret));
+    }
+
+    private async Task ShowCopied(string field)
+    {
+        var version = ++_copiedVersion;
+        CopiedField = field;
+        await Task.Delay(TimeSpan.FromSeconds(1.5));
+        if (version == _copiedVersion) CopiedField = null;
     }
 
     [RelayCommand]

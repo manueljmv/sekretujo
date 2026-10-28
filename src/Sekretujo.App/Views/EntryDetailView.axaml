@@ -5,6 +5,14 @@
              x:Class="Sekretujo.App.Views.EntryDetailView"
              x:DataType="vm:EntryDetailViewModel">
   <UserControl.Styles>
+    <Style Selector="Path.copied">
+      <Setter Property="Width" Value="14" />
+      <Setter Property="Height" Value="14" />
+      <Setter Property="Stroke" Value="{DynamicResource BrushSuccess}" />
+      <Setter Property="StrokeThickness" Value="2" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+    </Style>
     <Style Selector="TextBox.titleInput">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
@@ -56,11 +64,16 @@
               <TextBox Classes="field" Text="{Binding Username}" />
               <Button Classes="ghost" Command="{Binding CopyUsernameCommand}"
                       HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
-                <Border Classes="icon" Width="14" Height="14">
-                  <Border.OpacityMask>
-                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
-                  </Border.OpacityMask>
-                </Border>
+                <Panel>
+                  <Border Classes="icon" Width="14" Height="14"
+                          IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=Username}">
+                    <Border.OpacityMask>
+                      <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                    </Border.OpacityMask>
+                  </Border>
+                  <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                        IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=Username}" />
+                </Panel>
               </Button>
             </Grid>
 
@@ -85,11 +98,16 @@
                   </Panel>
                 </ToggleButton>
                 <Button Classes="ghost" Command="{Binding CopyPasswordCommand}">
-                  <Border Classes="icon" Width="14" Height="14">
-                    <Border.OpacityMask>
-                      <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
-                    </Border.OpacityMask>
-                  </Border>
+                  <Panel>
+                    <Border Classes="icon" Width="14" Height="14"
+                            IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=Password}">
+                      <Border.OpacityMask>
+                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                      </Border.OpacityMask>
+                    </Border>
+                    <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                          IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=Password}" />
+                  </Panel>
                 </Button>
               </StackPanel>
             </Grid>
@@ -138,11 +156,16 @@
                   </Border>
                   <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
                     <Button Classes="ghost" Command="{Binding CopyTotpCommand}">
-                      <Border Classes="icon" Width="14" Height="14">
-                        <Border.OpacityMask>
-                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
-                        </Border.OpacityMask>
-                      </Border>
+                      <Panel>
+                        <Border Classes="icon" Width="14" Height="14"
+                                IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=TotpCode}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                        <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                              IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=TotpCode}" />
+                      </Panel>
                     </Button>
                     <ToggleButton Classes="ghost" IsChecked="{Binding IsTotpQrVisible}">
                       <Panel>
@@ -169,11 +192,16 @@
                   <TextBlock Grid.Column="0" Text="{Binding TotpSecret}" FontFamily="monospace"
                              TextWrapping="Wrap" VerticalAlignment="Center" />
                   <Button Grid.Column="1" Classes="ghost" Command="{Binding CopyTotpSecretCommand}">
-                    <Border Classes="icon" Width="14" Height="14">
-                      <Border.OpacityMask>
-                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
-                      </Border.OpacityMask>
-                    </Border>
+                    <Panel>
+                      <Border Classes="icon" Width="14" Height="14"
+                              IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=TotpSecret}">
+                        <Border.OpacityMask>
+                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                        </Border.OpacityMask>
+                      </Border>
+                      <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                            IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=TotpSecret}" />
+                    </Panel>
                   </Button>
                 </Grid>
               </StackPanel>
