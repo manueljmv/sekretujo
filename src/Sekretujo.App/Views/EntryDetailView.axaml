@@ -52,7 +52,7 @@
     </Grid>
 
     <ScrollViewer Grid.Row="2">
-      <Grid ColumnDefinitions="*,340" IsVisible="{Binding !IsNote}">
+      <Grid ColumnDefinitions="*,340" IsVisible="{Binding IsPassword}">
 
         <!-- Credenciales + generador -->
         <Border Grid.Column="0" Classes="card" Margin="0,0,10,0" VerticalAlignment="Top">

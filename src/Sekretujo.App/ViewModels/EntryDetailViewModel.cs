@@ -16,6 +16,13 @@ using Sekretujo.Core.Services;
 
 namespace Sekretujo.App.ViewModels;
 
+public enum EntryKind
+{
+    Password,
+    Note,
+    Card
+}
+
 public partial class EntryDetailViewModel : ViewModelBase, IDisposable
 {
     private readonly PasswordGeneratorService _generator;
@@ -33,9 +40,26 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     private int _copiedVersion;
 
     [ObservableProperty] private Guid _id;
-    [ObservableProperty] private bool _isNote;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPassword), nameof(IsNote), nameof(IsCard), nameof(TypeLabel))]
+    private EntryKind _kind;
     [ObservableProperty] private bool _isFavorite;
-    [ObservableProperty] private string _title = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CardDisplayTitle))]
+    private string _title = string.Empty;
+    [ObservableProperty] private string _cardHolder = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CardMaskedNumber), nameof(CardNumberWarning))]
+    private string _cardNumber = string.Empty;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CardExpiryWarning))]
+    private string _cardExpiry = string.Empty;
+    [ObservableProperty] private string _cardCvv = string.Empty;
+    [ObservableProperty] private string _cardPin = string.Empty;
+    [ObservableProperty] private string _bankPhone = string.Empty;
+    [ObservableProperty] private bool _isCardNumberVisible;
+    [ObservableProperty] private bool _isCardCvvVisible;
+    [ObservableProperty] private bool _isCardPinVisible;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
     [ObservableProperty] private string _url = string.Empty;
@@ -63,7 +87,34 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
 
     public const int TotpPeriodSeconds = 30;
 
-    public string TypeLabel => IsNote ? "Nota" : "Contraseña";
+    public bool IsPassword => Kind == EntryKind.Password;
+    public bool IsNote => Kind == EntryKind.Note;
+    public bool IsCard => Kind == EntryKind.Card;
+
+    public string TypeLabel => Kind switch
+    {
+        EntryKind.Note => "Nota",
+        EntryKind.Card => "Tarjeta",
+        _ => "Contraseña"
+    };
+
+    public string CardDisplayTitle => Title.ToUpperInvariant();
+    public string CardMaskedNumber => CardInfo.MaskedNumber(CardNumber);
+
+    public string CardNumberWarning =>
+        string.IsNullOrWhiteSpace(CardNumber) || CardInfo.IsValidNumber(CardNumber)
+            ? string.Empty
+            : "Número de tarjeta no válido.";
+
+    public string CardExpiryWarning =>
+        string.IsNullOrWhiteSpace(CardExpiry)
+            ? string.Empty
+            : CardInfo.GetExpiryStatus(CardExpiry, DateOnly.FromDateTime(DateTime.Today)) switch
+            {
+                ExpiryStatus.InvalidFormat => "Formato de caducidad no válido (MM/AA).",
+                ExpiryStatus.Expired => "Tarjeta caducada.",
+                _ => string.Empty
+            };
 
     public event Action<VaultEntry>? Saved;
     public event Action<Guid>? DeleteRequested;
@@ -101,10 +152,13 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         IsFavorite = entry.IsFavorite;
         TagsText = string.Join(", ", entry.Tags);
         _originalCreatedAt = entry.CreatedAt;
+        IsCardNumberVisible = false;
+        IsCardCvvVisible = false;
+        IsCardPinVisible = false;
 
         if (entry is PasswordItem password)
         {
-            IsNote = false;
+            Kind = EntryKind.Password;
             Username = password.Username;
             Password = password.Password;
             Url = password.Url;
@@ -114,11 +168,21 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         }
         else if (entry is NoteItem note)
         {
-            IsNote = true;
+            Kind = EntryKind.Note;
             Body = note.Body;
         }
+        else if (entry is CardItem card)
+        {
+            Kind = EntryKind.Card;
+            CardHolder = card.Holder;
+            CardNumber = card.Number;
+            CardExpiry = card.Expiry;
+            CardCvv = card.Cvv;
+            CardPin = card.Pin;
+            BankPhone = card.BankPhone;
+            Notes = card.Notes;
+        }
 
-        OnPropertyChanged(nameof(TypeLabel));
         IsDirty = false;
         _isLoading = false;
     }
@@ -165,6 +229,12 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     partial void OnBodyChanged(string value) => MarkDirty();
     partial void OnTagsTextChanged(string value) => MarkDirty();
     partial void OnIsFavoriteChanged(bool value) => MarkDirty();
+    partial void OnCardHolderChanged(string value) => MarkDirty();
+    partial void OnCardNumberChanged(string value) => MarkDirty();
+    partial void OnCardExpiryChanged(string value) => MarkDirty();
+    partial void OnCardCvvChanged(string value) => MarkDirty();
+    partial void OnCardPinChanged(string value) => MarkDirty();
+    partial void OnBankPhoneChanged(string value) => MarkDirty();
 
     private void MarkDirty()
     {
@@ -277,6 +347,38 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         await ShowCopied(nameof(TotpSecret));
     }
 
+    [RelayCommand]
+    private Task CopyCardNumber() => CopySecret(CardInfo.Digits(CardNumber), nameof(CardNumber));
+
+    [RelayCommand]
+    private Task CopyCardCvv() => CopySecret(CardCvv, nameof(CardCvv));
+
+    [RelayCommand]
+    private Task CopyCardPin() => CopySecret(CardPin, nameof(CardPin));
+
+    [RelayCommand]
+    private Task CopyCardHolder() => CopyPlain(CardHolder, nameof(CardHolder));
+
+    [RelayCommand]
+    private Task CopyCardExpiry() => CopyPlain(CardExpiry, nameof(CardExpiry));
+
+    [RelayCommand]
+    private Task CopyBankPhone() => CopyPlain(BankPhone, nameof(BankPhone));
+
+    private async Task CopySecret(string value, string field)
+    {
+        if (_clipboard is null) return;
+        await _clipboardAutoClear.CopyAndClear(_clipboard, value, TimeSpan.FromSeconds(_appSettings.ClipboardClearSeconds));
+        await ShowCopied(field);
+    }
+
+    private async Task CopyPlain(string value, string field)
+    {
+        if (_clipboard is null) return;
+        await _clipboard.SetTextAsync(value);
+        await ShowCopied(field);
+    }
+
     private async Task ShowCopied(string field)
     {
         var version = ++_copiedVersion;
@@ -291,8 +393,9 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         var tags = TagsText.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .ToList();
 
-        VaultEntry entry = IsNote
-            ? new NoteItem
+        VaultEntry entry = Kind switch
+        {
+            EntryKind.Note => new NoteItem
             {
                 Id = Id,
                 Title = Title,
@@ -301,8 +404,24 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
                 Tags = tags,
                 CreatedAt = _originalCreatedAt,
                 ModifiedAt = DateTimeOffset.UtcNow
-            }
-            : new PasswordItem
+            },
+            EntryKind.Card => new CardItem
+            {
+                Id = Id,
+                Title = Title,
+                Holder = CardHolder,
+                Number = CardNumber,
+                Expiry = CardExpiry,
+                Cvv = CardCvv,
+                Pin = CardPin,
+                BankPhone = BankPhone,
+                Notes = Notes,
+                IsFavorite = IsFavorite,
+                Tags = tags,
+                CreatedAt = _originalCreatedAt,
+                ModifiedAt = DateTimeOffset.UtcNow
+            },
+            _ => new PasswordItem
             {
                 Id = Id,
                 Title = Title,
@@ -315,7 +434,8 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
                 Tags = tags,
                 CreatedAt = _originalCreatedAt,
                 ModifiedAt = DateTimeOffset.UtcNow
-            };
+            }
+        };
         IsDirty = false;
         Saved?.Invoke(entry);
     }
