@@ -39,7 +39,7 @@
           <SolidColorBrush x:Key="BrushWarningMuted" Color="#F5A623" Opacity="0.18" />
           <LinearGradientBrush x:Key="BrushCardVisual" StartPoint="0%,0%" EndPoint="100%,100%">
             <GradientStop Offset="0" Color="#2E2A4D" />
-            <GradientStop Offset="1" Color="#8B7CF6" />
+            <GradientStop Offset="1" Color="#5B4DB0" />
           </LinearGradientBrush>
           <SolidColorBrush x:Key="BrushCardVisualText" Color="#F1F1F4" />
         </ResourceDictionary>
