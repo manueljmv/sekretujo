@@ -20,10 +20,17 @@ public class CardInfoTests
         Assert.Equal(expected, CardInfo.LastFour(number));
 
     [Theory]
-    [InlineData("4111111111111234", "•••• •••• •••• 1234")]
-    [InlineData("", "•••• •••• •••• ••••")]
-    public void MaskedNumber_ShowsOnlyLastFour(string number, string expected) =>
-        Assert.Equal(expected, CardInfo.MaskedNumber(number));
+    [InlineData("", "")]
+    [InlineData("0", "0")]
+    [InlineData("08", "08")]
+    [InlineData("082", "08/2")]
+    [InlineData("0828", "08/28")]
+    [InlineData("082028", "08/2028")]
+    [InlineData("08202812", "08/2028")]
+    [InlineData("08/", "08/")]
+    [InlineData("8/28", "8/28")]
+    public void FormatExpiry_InsertsSlashAfterMonthWhenTypingDigits(string input, string expected) =>
+        Assert.Equal(expected, CardInfo.FormatExpiry(input));
 
     [Theory]
     [InlineData("4111 1111 1111 1111", true)]

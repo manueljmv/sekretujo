@@ -249,21 +249,9 @@
       <!-- Tarjeta -->
       <Grid ColumnDefinitions="*,340" IsVisible="{Binding IsCard}">
         <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,10,0">
-          <Border Classes="cardVisual">
-            <Grid RowDefinitions="Auto,*,Auto">
-              <TextBlock Grid.Row="0" Text="{Binding CardDisplayTitle}" FontSize="12" Opacity="0.85" />
-              <TextBlock Grid.Row="1" Text="{Binding CardMaskedNumber}" FontFamily="monospace" FontSize="18"
-                         VerticalAlignment="Center" />
-              <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" Text="{Binding CardHolder}" FontSize="12" TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="1" Text="{Binding CardExpiry}" FontSize="12" Margin="10,0,0,0" />
-              </Grid>
-            </Grid>
-          </Border>
-
           <Border Classes="card">
             <StackPanel Spacing="10">
-              <TextBlock Text="EDITAR" Classes="eyebrow" />
+              <TextBlock Text="TARJETA" Classes="eyebrow" />
 
               <TextBlock Text="Número" Classes="muted" FontSize="12" />
               <Grid>
@@ -325,7 +313,8 @@
                 <StackPanel Grid.Column="2" Spacing="6">
                   <TextBlock Text="Caducidad" Classes="muted" FontSize="12" />
                   <Grid>
-                    <TextBox Classes="field" Text="{Binding CardExpiry}" PlaceholderText="MM/AA" />
+                    <TextBox Classes="field" Text="{Binding CardExpiry}"
+                             PlaceholderText="MM/AA" TextChanged="OnCardExpiryTextChanged" />
                     <Button Classes="ghost" Command="{Binding CopyCardExpiryCommand}"
                             HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
                       <Panel>
@@ -350,7 +339,7 @@
                 <StackPanel Grid.Column="0" Spacing="6">
                   <TextBlock Text="CVV" Classes="muted" FontSize="12" />
                   <Grid>
-                    <TextBox Classes="field" Text="{Binding CardCvv}" PasswordChar="•"
+                    <TextBox Classes="field" Text="{Binding CardCvv}" PasswordChar="•" MaxLength="4"
                              RevealPassword="{Binding IsCardCvvVisible}" Padding="12,10,76,10" />
                     <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right"
                                 VerticalAlignment="Center" Margin="0,0,4,0">
@@ -386,7 +375,7 @@
                 <StackPanel Grid.Column="2" Spacing="6">
                   <TextBlock Text="PIN" Classes="muted" FontSize="12" />
                   <Grid>
-                    <TextBox Classes="field" Text="{Binding CardPin}" PasswordChar="•"
+                    <TextBox Classes="field" Text="{Binding CardPin}" PasswordChar="•" MaxLength="6"
                              RevealPassword="{Binding IsCardPinVisible}" Padding="12,10,76,10" />
                     <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right"
                                 VerticalAlignment="Center" Margin="0,0,4,0">

@@ -13,8 +13,6 @@ paso, guarda datos que no son de pago pero que conviene tener a mano: PIN, telé
 - Crear, editar, borrar, marcar como favorita y etiquetar tarjetas, igual que el resto de
   entradas.
 - Copiar cada campo con un clic; número, CVV y PIN con autolimpieza del portapapeles.
-- Reconocer la tarjeta de un vistazo gracias a un dibujo de tarjeta en la parte superior del
-  detalle.
 
 ## Fuera de alcance
 
@@ -60,29 +58,29 @@ Un helper puro y testeado en Core (nombre a elección del constructor) con:
 Tests en `VaultDataSerializationTests` (ida y vuelta de un `CardItem` dentro de `VaultData`)
 y en un fichero nuevo para el helper.
 
-## Pantalla de detalle (diseño B)
+## Pantalla de detalle
 
 De arriba abajo:
 
 - **Cabecera:** igual que ahora. La etiqueta de tipo dice «Tarjeta».
 - **Tags:** igual que ahora.
-- **Columna izquierda:**
-  - **Dibujo de tarjeta**, solo de lectura. Un `Border` con degradado violeta, definido como
-    clase de estilo nueva en `Styles/Theme.axaml`, con sus propios recursos de color de
-    degradado y de texto en cada tema (oscuro y claro). Así el texto se lee bien en los dos:
-    en el tema claro, `ColorAccentMuted` (#E3DEFA) es demasiado claro para texto blanco. Muestra el
-    título en mayúsculas, el número enmascarado («•••• •••• •••• 1234»), el titular y la
-    caducidad, y se actualiza en vivo mientras se edita. Siempre va enmascarado, aunque se
-    revele el campo Número.
-  - **Card «EDITAR»** con los campos Número (👁 + copiar), Titular y Caducidad en la misma
-    fila (copiar), y CVV y PIN en la misma fila (👁 + copiar).
+- **Columna izquierda:** card «TARJETA» con los campos Número (👁 + copiar), Titular y
+  Caducidad en la misma fila (copiar), y CVV y PIN en la misma fila (👁 + copiar).
+
+El diseño B incluía un dibujo de tarjeta encima de los campos. Se quitó tras probarlo en la
+app (2026-11-05): no aportaba nada, duplicaba la información de los campos y ocupaba espacio.
 - **Columna derecha:** card «BANCO» con el campo Teléfono (copiar) y card «NOTAS».
 - **Pie:** igual que ahora (eliminar, estado de guardado, Descartar, Guardar).
 
 **Comportamiento:**
 
 - Número, CVV y PIN se muestran con `PasswordChar` y cada uno tiene su propio botón 👁. Al
-  cargar la entrada, los tres empiezan ocultos.
+  cargar la entrada, los tres empiezan ocultos, salvo el número cuando está vacío (tarjeta
+  nueva), que empieza visible.
+- Longitud máxima: CVV 4 caracteres (American Express usa 4) y PIN 6.
+- Caducidad: mientras se escriben dígitos sin barra, la barra se inserta sola tras el mes
+  («0828» → «08/28»). Si el texto ya tiene una barra no se toca, así se puede escribir «8/28»
+  o borrar la barra.
 - Número, CVV y PIN se copian con `ClipboardAutoClearService.CopyAndClear`. Titular,
   caducidad y teléfono se copian con un `SetTextAsync` normal, igual que el usuario de una
   contraseña. El número se copia solo con dígitos. Se reutiliza el indicador `CopiedField` ✓.
@@ -95,7 +93,6 @@ De arriba abajo:
   Con el campo vacío no se muestra ningún aviso.
 - `IsDirty`, Descartar y Guardar funcionan igual que en el resto de tipos.
 
-Boceto de referencia: `.superpowers/brainstorm/77050-1793873908/content/card-layout.html`, opción B.
 
 ## Integración en la shell
 
@@ -114,7 +111,7 @@ Boceto de referencia: `.superpowers/brainstorm/77050-1793873908/content/card-lay
 - Cómo distinguir el tipo en `EntryDetailViewModel`: hoy usa el booleano `IsNote` para
   elegir entre contraseña y nota. Se puede sustituir por un enum de tipo con propiedades
   derivadas `IsPassword`/`IsNote`/`IsCard`.
-- El nombre y la ubicación exacta del helper de tarjeta y de la clase de estilo del dibujo.
+- El nombre y la ubicación exacta del helper de tarjeta.
 
 ## Verificación
 

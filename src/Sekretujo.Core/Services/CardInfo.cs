@@ -9,8 +9,6 @@ public enum ExpiryStatus
 
 public static class CardInfo
 {
-    private const string MaskedGroup = "••••";
-
     public static string Digits(string number) => new(number.Where(char.IsAsciiDigit).ToArray());
 
     public static string LastFour(string number)
@@ -19,10 +17,13 @@ public static class CardInfo
         return digits.Length < 4 ? string.Empty : digits[^4..];
     }
 
-    public static string MaskedNumber(string number)
+    // Leaves input containing '/' untouched, so the user can type "8/28" or delete the slash.
+    public static string FormatExpiry(string input)
     {
-        var lastFour = LastFour(number);
-        return $"{MaskedGroup} {MaskedGroup} {MaskedGroup} {(lastFour.Length == 0 ? MaskedGroup : lastFour)}";
+        if (input.Contains('/')) return input;
+        var digits = Digits(input);
+        if (digits.Length > 6) digits = digits[..6];
+        return digits.Length <= 2 ? digits : $"{digits[..2]}/{digits[2..]}";
     }
 
     public static bool IsValidNumber(string number)

@@ -44,12 +44,10 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(IsPassword), nameof(IsNote), nameof(IsCard), nameof(TypeLabel))]
     private EntryKind _kind;
     [ObservableProperty] private bool _isFavorite;
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CardDisplayTitle))]
-    private string _title = string.Empty;
+    [ObservableProperty] private string _title = string.Empty;
     [ObservableProperty] private string _cardHolder = string.Empty;
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CardMaskedNumber), nameof(CardNumberWarning))]
+    [NotifyPropertyChangedFor(nameof(CardNumberWarning))]
     private string _cardNumber = string.Empty;
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CardExpiryWarning))]
@@ -97,9 +95,6 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         EntryKind.Card => "Tarjeta",
         _ => "Contraseña"
     };
-
-    public string CardDisplayTitle => Title.ToUpperInvariant();
-    public string CardMaskedNumber => CardInfo.MaskedNumber(CardNumber);
 
     public string CardNumberWarning =>
         string.IsNullOrWhiteSpace(CardNumber) || CardInfo.IsValidNumber(CardNumber)
@@ -174,6 +169,7 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         else if (entry is CardItem card)
         {
             Kind = EntryKind.Card;
+            IsCardNumberVisible = string.IsNullOrEmpty(card.Number);
             CardHolder = card.Holder;
             CardNumber = card.Number;
             CardExpiry = card.Expiry;

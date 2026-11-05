@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Sekretujo.App.ViewModels;
+using Sekretujo.Core.Services;
 
 namespace Sekretujo.App.Views;
 
@@ -10,6 +11,15 @@ public partial class EntryDetailView : UserControl
         InitializeComponent();
         DataContextChanged += (_, _) => AttachTopLevelServices();
         AttachedToVisualTree += (_, _) => AttachTopLevelServices();
+    }
+
+    private void OnCardExpiryTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is not TextBox box || box.Text is null) return;
+        var formatted = CardInfo.FormatExpiry(box.Text);
+        if (formatted == box.Text) return;
+        box.Text = formatted;
+        box.CaretIndex = formatted.Length;
     }
 
     private void AttachTopLevelServices()
