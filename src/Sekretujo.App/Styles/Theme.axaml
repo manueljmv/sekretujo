@@ -37,6 +37,11 @@
           <SolidColorBrush x:Key="BrushDanger" Color="#F1685E" />
           <SolidColorBrush x:Key="BrushOnAccent" Color="#15121F" />
           <SolidColorBrush x:Key="BrushWarningMuted" Color="#F5A623" Opacity="0.18" />
+          <LinearGradientBrush x:Key="BrushCardVisual" StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Offset="0" Color="#2E2A4D" />
+            <GradientStop Offset="1" Color="#8B7CF6" />
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="BrushCardVisualText" Color="#F1F1F4" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
@@ -73,6 +78,11 @@
           <SolidColorBrush x:Key="BrushDanger" Color="#C8433C" />
           <SolidColorBrush x:Key="BrushOnAccent" Color="#FFFFFF" />
           <SolidColorBrush x:Key="BrushWarningMuted" Color="#AD6F06" Opacity="0.18" />
+          <LinearGradientBrush x:Key="BrushCardVisual" StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Offset="0" Color="#6E56CF" />
+            <GradientStop Offset="1" Color="#5A45B8" />
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="BrushCardVisualText" Color="#FFFFFF" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -110,6 +120,15 @@
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="Padding" Value="20" />
+  </Style>
+  <Style Selector="Border.cardVisual">
+    <Setter Property="Background" Value="{DynamicResource BrushCardVisual}" />
+    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="Padding" Value="20" />
+    <Setter Property="Height" Value="170" />
+  </Style>
+  <Style Selector="Border.cardVisual TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource BrushCardVisualText}" />
   </Style>
 
   <!-- TextBox -->

@@ -52,6 +52,7 @@
     </Grid>
 
     <ScrollViewer Grid.Row="2">
+      <Panel>
       <Grid ColumnDefinitions="*,340" IsVisible="{Binding IsPassword}">
 
         <!-- Credenciales + generador -->
@@ -244,6 +245,219 @@
           </Border>
         </StackPanel>
       </Grid>
+
+      <!-- Tarjeta -->
+      <Grid ColumnDefinitions="*,340" IsVisible="{Binding IsCard}">
+        <StackPanel Grid.Column="0" Spacing="10" Margin="0,0,10,0">
+          <Border Classes="cardVisual">
+            <Grid RowDefinitions="Auto,*,Auto">
+              <TextBlock Grid.Row="0" Text="{Binding CardDisplayTitle}" FontSize="12" Opacity="0.85" />
+              <TextBlock Grid.Row="1" Text="{Binding CardMaskedNumber}" FontFamily="monospace" FontSize="18"
+                         VerticalAlignment="Center" />
+              <Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding CardHolder}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Text="{Binding CardExpiry}" FontSize="12" Margin="10,0,0,0" />
+              </Grid>
+            </Grid>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="EDITAR" Classes="eyebrow" />
+
+              <TextBlock Text="Número" Classes="muted" FontSize="12" />
+              <Grid>
+                <TextBox Classes="field" Text="{Binding CardNumber}" PasswordChar="•"
+                         RevealPassword="{Binding IsCardNumberVisible}" Padding="12,10,76,10" />
+                <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Margin="0,0,4,0">
+                  <ToggleButton Classes="ghost" IsChecked="{Binding IsCardNumberVisible}">
+                    <Panel>
+                      <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsCardNumberVisible}">
+                        <Border.OpacityMask>
+                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                        </Border.OpacityMask>
+                      </Border>
+                      <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsCardNumberVisible}">
+                        <Border.OpacityMask>
+                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                        </Border.OpacityMask>
+                      </Border>
+                    </Panel>
+                  </ToggleButton>
+                  <Button Classes="ghost" Command="{Binding CopyCardNumberCommand}">
+                    <Panel>
+                      <Border Classes="icon" Width="14" Height="14"
+                              IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=CardNumber}">
+                        <Border.OpacityMask>
+                          <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                        </Border.OpacityMask>
+                      </Border>
+                      <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                            IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=CardNumber}" />
+                    </Panel>
+                  </Button>
+                </StackPanel>
+              </Grid>
+              <TextBlock Text="{Binding CardNumberWarning}" Foreground="{DynamicResource BrushWarning}" FontSize="12"
+                         IsVisible="{Binding CardNumberWarning, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+
+              <Grid ColumnDefinitions="2*,10,*">
+                <StackPanel Grid.Column="0" Spacing="6">
+                  <TextBlock Text="Titular" Classes="muted" FontSize="12" />
+                  <Grid>
+                    <TextBox Classes="field" Text="{Binding CardHolder}" />
+                    <Button Classes="ghost" Command="{Binding CopyCardHolderCommand}"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                      <Panel>
+                        <Border Classes="icon" Width="14" Height="14"
+                                IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=CardHolder}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                        <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                              IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=CardHolder}" />
+                      </Panel>
+                    </Button>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="6">
+                  <TextBlock Text="Caducidad" Classes="muted" FontSize="12" />
+                  <Grid>
+                    <TextBox Classes="field" Text="{Binding CardExpiry}" PlaceholderText="MM/AA" />
+                    <Button Classes="ghost" Command="{Binding CopyCardExpiryCommand}"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                      <Panel>
+                        <Border Classes="icon" Width="14" Height="14"
+                                IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=CardExpiry}">
+                          <Border.OpacityMask>
+                            <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                          </Border.OpacityMask>
+                        </Border>
+                        <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                              IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=CardExpiry}" />
+                      </Panel>
+                    </Button>
+                  </Grid>
+                  <TextBlock Text="{Binding CardExpiryWarning}" Foreground="{DynamicResource BrushWarning}" FontSize="12"
+                             TextWrapping="Wrap"
+                             IsVisible="{Binding CardExpiryWarning, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
+                </StackPanel>
+              </Grid>
+
+              <Grid ColumnDefinitions="*,10,*">
+                <StackPanel Grid.Column="0" Spacing="6">
+                  <TextBlock Text="CVV" Classes="muted" FontSize="12" />
+                  <Grid>
+                    <TextBox Classes="field" Text="{Binding CardCvv}" PasswordChar="•"
+                             RevealPassword="{Binding IsCardCvvVisible}" Padding="12,10,76,10" />
+                    <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="0,0,4,0">
+                      <ToggleButton Classes="ghost" IsChecked="{Binding IsCardCvvVisible}">
+                        <Panel>
+                          <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsCardCvvVisible}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                          <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsCardCvvVisible}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                        </Panel>
+                      </ToggleButton>
+                      <Button Classes="ghost" Command="{Binding CopyCardCvvCommand}">
+                        <Panel>
+                          <Border Classes="icon" Width="14" Height="14"
+                                  IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=CardCvv}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                          <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                                IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=CardCvv}" />
+                        </Panel>
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="6">
+                  <TextBlock Text="PIN" Classes="muted" FontSize="12" />
+                  <Grid>
+                    <TextBox Classes="field" Text="{Binding CardPin}" PasswordChar="•"
+                             RevealPassword="{Binding IsCardPinVisible}" Padding="12,10,76,10" />
+                    <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="0,0,4,0">
+                      <ToggleButton Classes="ghost" IsChecked="{Binding IsCardPinVisible}">
+                        <Panel>
+                          <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding !IsCardPinVisible}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/invisible.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                          <Border Classes="icon" Width="14" Height="14" IsVisible="{Binding IsCardPinVisible}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/visible.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                        </Panel>
+                      </ToggleButton>
+                      <Button Classes="ghost" Command="{Binding CopyCardPinCommand}">
+                        <Panel>
+                          <Border Classes="icon" Width="14" Height="14"
+                                  IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=CardPin}">
+                            <Border.OpacityMask>
+                              <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                            </Border.OpacityMask>
+                          </Border>
+                          <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                                IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=CardPin}" />
+                        </Panel>
+                      </Button>
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="10">
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="BANCO" Classes="eyebrow" />
+              <TextBlock Text="Teléfono" Classes="muted" FontSize="12" />
+              <Grid>
+                <TextBox Classes="field" Text="{Binding BankPhone}" />
+                <Button Classes="ghost" Command="{Binding CopyBankPhoneCommand}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                  <Panel>
+                    <Border Classes="icon" Width="14" Height="14"
+                            IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.NotEqual}, ConverterParameter=BankPhone}">
+                      <Border.OpacityMask>
+                        <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/copy.png" Stretch="Uniform" />
+                      </Border.OpacityMask>
+                    </Border>
+                    <Path Classes="copied" Data="M1,7 L5,11 L13,3"
+                          IsVisible="{Binding CopiedField, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter=BankPhone}" />
+                  </Panel>
+                </Button>
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Text="NOTAS" Classes="eyebrow" />
+              <TextBox Text="{Binding Notes}" AcceptsReturn="True" Height="90"
+                       PlaceholderText="Límite, condiciones, instrucciones de bloqueo..." />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+      </Panel>
     </ScrollViewer>
 
     <Border Grid.Row="2" Classes="card" IsVisible="{Binding IsNote}" VerticalAlignment="Stretch">
