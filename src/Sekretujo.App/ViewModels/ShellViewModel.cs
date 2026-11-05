@@ -15,7 +15,8 @@ public enum EntryTypeFilter
 {
     All,
     Passwords,
-    Notes
+    Notes,
+    Cards
 }
 
 public partial class ShellViewModel : ViewModelBase, IDisposable
@@ -127,6 +128,9 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private void NewNote() => StartNewEntry(new Core.Models.NoteItem { Title = "Nueva nota" });
 
     [RelayCommand]
+    private void NewCard() => StartNewEntry(new Core.Models.CardItem { Title = "Nueva tarjeta" });
+
+    [RelayCommand]
     private void OpenSettings()
     {
         var settings = _services.GetRequiredService<SettingsViewModel>();
@@ -146,7 +150,8 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
         SearchText = string.Empty;
         FavoritesOnly = false;
         if (TypeFilter == EntryTypeFilter.Passwords && entry is not Core.Models.PasswordItem
-            || TypeFilter == EntryTypeFilter.Notes && entry is not Core.Models.NoteItem)
+            || TypeFilter == EntryTypeFilter.Notes && entry is not Core.Models.NoteItem
+            || TypeFilter == EntryTypeFilter.Cards && entry is not Core.Models.CardItem)
             TypeFilter = EntryTypeFilter.All;
         Refresh(selectAfterRefresh: entry.Id);
     }
@@ -204,6 +209,7 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
         {
             EntryTypeFilter.Passwords => query.Where(e => e is Core.Models.PasswordItem),
             EntryTypeFilter.Notes => query.Where(e => e is Core.Models.NoteItem),
+            EntryTypeFilter.Cards => query.Where(e => e is Core.Models.CardItem),
             _ => query
         };
         if (!string.IsNullOrWhiteSpace(SearchText))

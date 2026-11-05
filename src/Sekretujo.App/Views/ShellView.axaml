@@ -51,6 +51,9 @@
                 <ToggleButton Classes="tab" Content="Notas" Command="{Binding SetTypeFilterCommand}"
                               CommandParameter="{x:Static vm:EntryTypeFilter.Notes}"
                               IsChecked="{Binding TypeFilter, Mode=OneWay, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter={x:Static vm:EntryTypeFilter.Notes}}" />
+                <ToggleButton Classes="tab" Content="Tarjetas" Command="{Binding SetTypeFilterCommand}"
+                              CommandParameter="{x:Static vm:EntryTypeFilter.Cards}"
+                              IsChecked="{Binding TypeFilter, Mode=OneWay, Converter={x:Static conv:ObjectConverters.Equal}, ConverterParameter={x:Static vm:EntryTypeFilter.Cards}}" />
               </StackPanel>
             </Border>
 
@@ -87,6 +90,16 @@
                   </Border.OpacityMask>
                 </Border>
                 <TextBlock Text="Nota" />
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding NewCardCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Border Classes="icon" Width="14" Height="14">
+                  <Border.OpacityMask>
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                  </Border.OpacityMask>
+                </Border>
+                <TextBlock Text="Tarjeta" />
               </StackPanel>
             </Button>
             <Button Classes="ghost" Command="{Binding OpenSettingsCommand}" ToolTip.Tip="Ajustes">

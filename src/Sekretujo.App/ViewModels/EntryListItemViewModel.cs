@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Sekretujo.Core.Models;
+using Sekretujo.Core.Services;
 
 namespace Sekretujo.App.ViewModels;
 
@@ -15,12 +16,17 @@ public sealed partial class EntryListItemViewModel : ViewModelBase
         IsPassword = entry is PasswordItem;
         Tags = entry.Tags;
 
-        TypeLabel = IsPassword ? "Contraseña" : "Nota";
-        Icon = IsPassword ? "\U0001F511" : "\U0001F4C4";
+        (TypeLabel, Icon) = entry switch
+        {
+            CardItem => ("Tarjeta", "\U0001F4B3"),
+            NoteItem => ("Nota", "\U0001F4C4"),
+            _ => ("Contraseña", "\U0001F511")
+        };
         Subtitle = entry switch
         {
             PasswordItem password => string.IsNullOrWhiteSpace(password.Username) ? "sin usuario" : password.Username,
             NoteItem note => string.IsNullOrWhiteSpace(note.Body) ? "vacía" : Truncate(note.Body, 24),
+            CardItem card => CardInfo.LastFour(card.Number) is { Length: > 0 } lastFour ? "•••• " + lastFour : "sin número",
             _ => string.Empty
         };
     }
