@@ -5,6 +5,7 @@ namespace Sekretujo.Core.Models;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(PasswordItem), "password")]
 [JsonDerivedType(typeof(NoteItem), "note")]
+[JsonDerivedType(typeof(CardItem), "card")]
 public abstract class VaultEntry
 {
     public Guid Id { get; set; } = Guid.NewGuid();
