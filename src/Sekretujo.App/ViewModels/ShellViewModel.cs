@@ -140,6 +140,15 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
         _session.Data!.Entries.Add(entry);
         Persist();
         Refresh(selectAfterRefresh: entry.Id);
+        if (SelectedEntry?.Id == entry.Id) return;
+
+        // The new entry is hidden by the active filters, so it can't be selected and no form shows.
+        SearchText = string.Empty;
+        FavoritesOnly = false;
+        if (TypeFilter == EntryTypeFilter.Passwords && entry is not Core.Models.PasswordItem
+            || TypeFilter == EntryTypeFilter.Notes && entry is not Core.Models.NoteItem)
+            TypeFilter = EntryTypeFilter.All;
+        Refresh(selectAfterRefresh: entry.Id);
     }
 
     private void OnEntrySaved(Core.Models.VaultEntry updated)
