@@ -11,6 +11,8 @@ public sealed class AutoLockService : IDisposable
 
     public event Action? TimedOut;
 
+    public TimeSpan Duration => _timeout;
+
     public TimeSpan? Remaining
     {
         get

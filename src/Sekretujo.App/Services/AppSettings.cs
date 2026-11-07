@@ -1,3 +1,5 @@
+using Sekretujo.App.ViewModels;
+
 namespace Sekretujo.App.Services;
 
 public sealed class AppSettings
@@ -10,4 +12,5 @@ public sealed class AppSettings
     public bool GeneratorUseLowercase { get; set; } = true;
     public bool GeneratorUseDigits { get; set; } = true;
     public bool GeneratorUseSymbols { get; set; } = true;
+    public EntryTypeFilter LastTypeFilter { get; set; } = EntryTypeFilter.All;
 }

@@ -22,6 +22,12 @@ public partial class MainWindow : Window
             vm.NotifyActivity();
     }
 
+    protected override void OnClosed(EventArgs e)
+    {
+        (DataContext as MainWindowViewModel)?.Shutdown();
+        base.OnClosed(e);
+    }
+
     private void OnGotFocus(object? sender, RoutedEventArgs e)
     {
         if (e.Source is TextBox textBox)

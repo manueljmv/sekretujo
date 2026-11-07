@@ -64,11 +64,6 @@
                 </Border.OpacityMask>
               </Border>
             </ToggleButton>
-
-            <Border Background="{DynamicResource BrushSurfaceAlt}" CornerRadius="8" Padding="10,6"
-                    IsVisible="{Binding AutoLockDisplay, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}">
-              <TextBlock Text="{Binding AutoLockDisplay}" FontSize="12" Foreground="{DynamicResource BrushSuccess}" />
-            </Border>
           </StackPanel>
 
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -76,7 +71,7 @@
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Border Classes="icon" Width="14" Height="14" Background="{DynamicResource BrushOnAccent}">
                   <Border.OpacityMask>
-                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/key.png" Stretch="Uniform" />
                   </Border.OpacityMask>
                 </Border>
                 <TextBlock Text="Contraseña" />
@@ -86,7 +81,7 @@
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Border Classes="icon" Width="14" Height="14">
                   <Border.OpacityMask>
-                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/note.png" Stretch="Uniform" />
                   </Border.OpacityMask>
                 </Border>
                 <TextBlock Text="Nota" />
@@ -96,7 +91,7 @@
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <Border Classes="icon" Width="14" Height="14">
                   <Border.OpacityMask>
-                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/plus.png" Stretch="Uniform" />
+                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/card.png" Stretch="Uniform" />
                   </Border.OpacityMask>
                 </Border>
                 <TextBlock Text="Tarjeta" />
@@ -109,16 +104,23 @@
                 </Border.OpacityMask>
               </Border>
             </Button>
-            <Button Command="{Binding LockCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <Border Classes="icon" Width="14" Height="14">
-                  <Border.OpacityMask>
-                    <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/lock.png" Stretch="Uniform" />
-                  </Border.OpacityMask>
-                </Border>
-                <TextBlock Text="Bloquear" />
-              </StackPanel>
-            </Button>
+            <Panel>
+              <Button Command="{Binding LockCommand}" ToolTip.Tip="{Binding AutoLockTooltip}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Border Classes="icon" Width="14" Height="14">
+                    <Border.OpacityMask>
+                      <ImageBrush Source="avares://Sekretujo.App/Assets/Icons/lock.png" Stretch="Uniform" />
+                    </Border.OpacityMask>
+                  </Border>
+                  <TextBlock Text="Bloquear" />
+                </StackPanel>
+              </Button>
+              <!-- Inset by the button's corner radius so the bar sits on the straight part of the bottom edge. -->
+              <ProgressBar Minimum="0" Maximum="100" Height="2" MinHeight="2" MinWidth="0" Margin="10,0,10,1"
+                           VerticalAlignment="Bottom" IsHitTestVisible="False" Value="{Binding AutoLockProgress}"
+                           Background="Transparent" Foreground="{DynamicResource BrushSuccess}"
+                           IsVisible="{Binding IsAutoLockActive}" />
+            </Panel>
           </StackPanel>
         </Grid>
       </Border>

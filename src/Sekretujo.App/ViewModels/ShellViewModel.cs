@@ -26,7 +26,10 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private readonly IServiceProvider _services;
     private readonly AutoLockService _autoLock;
     private readonly DispatcherTimer _autoLockDisplayTimer;
-    private readonly HashSet<string> _collapsedTags = new(StringComparer.OrdinalIgnoreCase);
+    private readonly AppSettings _appSettings;
+    private readonly AppSettingsStore _appSettingsStore;
+    private readonly HashSet<string> _collapsedTags;
+    private bool _collapsedTagsChanged;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -50,7 +53,13 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
-    private string _autoLockDisplay = string.Empty;
+    private bool _isAutoLockActive;
+
+    [ObservableProperty]
+    private double _autoLockProgress;
+
+    [ObservableProperty]
+    private string _autoLockTooltip = string.Empty;
 
     public ObservableCollection<EntryListItemViewModel> Entries { get; } = new();
     public ObservableCollection<EntryGroupViewModel> Groups { get; } = new();
@@ -58,12 +67,18 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     public event Action? Locked;
 
     public ShellViewModel(VaultSession session, VaultRepository repository, IServiceProvider services,
-        AutoLockService autoLock)
+        AutoLockService autoLock, AppSettings appSettings, AppSettingsStore appSettingsStore)
     {
         _session = session;
         _repository = repository;
         _services = services;
         _autoLock = autoLock;
+        _appSettings = appSettings;
+        _appSettingsStore = appSettingsStore;
+        _collapsedTags = new HashSet<string>(session.Data?.CollapsedTags ?? new List<string>(),
+            StringComparer.OrdinalIgnoreCase);
+        TypeFilter = appSettings.LastTypeFilter;
+        SearchText = session.Data?.SearchText ?? string.Empty;
         _autoLockDisplayTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _autoLockDisplayTimer.Tick += (_, _) => RefreshAutoLockDisplay();
         _autoLockDisplayTimer.Start();
@@ -74,14 +89,23 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private void RefreshAutoLockDisplay()
     {
         var remaining = _autoLock.Remaining;
-        AutoLockDisplay = remaining is { } value
+        var duration = _autoLock.Duration;
+        IsAutoLockActive = remaining is not null && duration > TimeSpan.Zero;
+        AutoLockProgress = IsAutoLockActive ? 100 * remaining!.Value / duration : 0;
+        AutoLockTooltip = remaining is { } value
             ? $"Autobloqueo en {(int)value.TotalMinutes}:{value.Seconds:D2}"
             : string.Empty;
     }
 
     partial void OnSearchTextChanged(string value) => Refresh();
     partial void OnFavoritesOnlyChanged(bool value) => Refresh();
-    partial void OnTypeFilterChanged(EntryTypeFilter value) => Refresh();
+    partial void OnTypeFilterChanged(EntryTypeFilter value)
+    {
+        Refresh();
+        if (_appSettings.LastTypeFilter == value) return;
+        _appSettings.LastTypeFilter = value;
+        _appSettingsStore.Save(_appSettings);
+    }
 
     [RelayCommand]
     private void SetTypeFilter(EntryTypeFilter filter) => TypeFilter = filter;
@@ -109,16 +133,19 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private void Lock()
-    {
-        _session.Close();
-        Locked?.Invoke();
-    }
+    private void Lock() => Locked?.Invoke();
 
+    // Collapsed groups and search text are only written on lock/close: every vault save re-derives the Argon2id key.
     public void Dispose()
     {
         _autoLockDisplayTimer.Stop();
         Detail?.Dispose();
+        if (_session.Data is null) return;
+        if (!_collapsedTagsChanged && SearchText == _session.Data.SearchText) return;
+        _session.Data.CollapsedTags = _collapsedTags.ToList();
+        _session.Data.SearchText = SearchText;
+        _collapsedTagsChanged = false;
+        Persist();
     }
 
     [RelayCommand]
@@ -245,9 +272,8 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     {
         if (e.PropertyName != nameof(EntryGroupViewModel.IsExpanded) || sender is not EntryGroupViewModel group)
             return;
-        if (group.IsExpanded)
-            _collapsedTags.Remove(group.TagName);
-        else
-            _collapsedTags.Add(group.TagName);
+        _collapsedTagsChanged |= group.IsExpanded
+            ? _collapsedTags.Remove(group.TagName)
+            : _collapsedTags.Add(group.TagName);
     }
 }

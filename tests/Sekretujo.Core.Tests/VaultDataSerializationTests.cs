@@ -33,6 +33,40 @@ public class VaultDataSerializationTests
     }
 
     [Fact]
+    public void Serialize_Then_Deserialize_RoundTripsCollapsedTags()
+    {
+        var serializer = new VaultSerializer();
+        var data = new VaultData { CollapsedTags = { "work", "Sin etiqueta" } };
+
+        var roundTripped = serializer.Deserialize(serializer.Serialize(data));
+
+        Assert.Equal(new[] { "work", "Sin etiqueta" }, roundTripped.CollapsedTags);
+    }
+
+    [Fact]
+    public void Serialize_Then_Deserialize_RoundTripsSearchText()
+    {
+        var serializer = new VaultSerializer();
+        var data = new VaultData { SearchText = "banco" };
+
+        var roundTripped = serializer.Deserialize(serializer.Serialize(data));
+
+        Assert.Equal("banco", roundTripped.SearchText);
+    }
+
+    [Fact]
+    public void Deserialize_VaultWithoutCollapsedTags_DefaultsToEmpty()
+    {
+        var serializer = new VaultSerializer();
+        var json = """{"SchemaVersion":1,"Entries":[],"Tags":[]}"""u8.ToArray();
+
+        var data = serializer.Deserialize(json);
+
+        Assert.Empty(data.CollapsedTags);
+        Assert.Equal(string.Empty, data.SearchText);
+    }
+
+    [Fact]
     public void Serialize_Then_Deserialize_RoundTripsCardItem()
     {
         var serializer = new VaultSerializer();

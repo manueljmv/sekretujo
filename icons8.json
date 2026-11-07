@@ -18,7 +18,10 @@
       "search": { "id": "82712", "commonName": "search" },
       "expand-arrow": { "id": "85018", "commonName": "expand-arrow" },
       "export": { "id": "86287", "commonName": "export" },
-      "import": { "id": "86326", "commonName": "import" }
+      "import": { "id": "86326", "commonName": "import" },
+      "key": { "id": "82753", "commonName": "key" },
+      "note": { "id": "86843", "commonName": "note" },
+      "card": { "id": "91124", "commonName": "bank-card-front-side" }
     }
   }
 }

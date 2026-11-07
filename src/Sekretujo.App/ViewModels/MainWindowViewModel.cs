@@ -33,8 +33,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowUnlock()
     {
         _autoLock.Stop();
-        _session.Close();
         (CurrentView as IDisposable)?.Dispose();
+        _session.Close();
         var unlock = _services.GetRequiredService<UnlockViewModel>();
         unlock.Unlocked += ShowShell;
         CurrentView = unlock;
@@ -51,4 +51,12 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public void NotifyActivity() => _autoLock.NotifyActivity();
+
+    public void Shutdown()
+    {
+        _autoLock.Stop();
+        (CurrentView as IDisposable)?.Dispose();
+        CurrentView = null;
+        _session.Close();
+    }
 }
