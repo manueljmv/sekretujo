@@ -67,6 +67,69 @@ public class ImportExportServiceTests
         Assert.Equal("-abc123", imported[0].Password);
     }
 
+    [Theory]
+    [InlineData("-list")]
+    [InlineData("@john")]
+    [InlineData("=2+2")]
+    [InlineData("+34 600 000 000")]
+    [InlineData("\tindented")]
+    [InlineData("'=already quoted")]
+    [InlineData("''-twice")]
+    [InlineData("'plain quote")]
+    [InlineData("old Mac\rline break")]
+    public void ExportCsv_Then_ImportCsv_RoundTripsTextFieldsExactly(string value)
+    {
+        var service = new ImportExportService();
+        var items = new List<PasswordItem>
+        {
+            new() { Title = value, Username = value, Password = value, Url = value, Notes = value, Tags = { value } }
+        };
+
+        var imported = service.ImportCsv(service.ExportCsv(items));
+
+        Assert.Single(imported);
+        Assert.Equal(value, imported[0].Title);
+        Assert.Equal(value, imported[0].Username);
+        Assert.Equal(value, imported[0].Password);
+        Assert.Equal(value, imported[0].Url);
+        Assert.Equal(value, imported[0].Notes);
+        Assert.Equal(new[] { value }, imported[0].Tags);
+    }
+
+    [Fact]
+    public void ExportCsv_Then_ImportCsv_RoundTripsTotpSecretAndFavorite()
+    {
+        var service = new ImportExportService();
+        var items = new List<PasswordItem>
+        {
+            new() { Title = "With", TotpSecret = "JBSWY3DPEHPK3PXP", IsFavorite = true },
+            new() { Title = "Without" }
+        };
+
+        var imported = service.ImportCsv(service.ExportCsv(items));
+
+        Assert.Equal(2, imported.Count);
+        Assert.Equal("JBSWY3DPEHPK3PXP", imported[0].TotpSecret);
+        Assert.True(imported[0].IsFavorite);
+        Assert.Null(imported[1].TotpSecret);
+        Assert.False(imported[1].IsFavorite);
+    }
+
+    [Fact]
+    public void ImportCsv_WithoutTotpAndFavoriteColumns_LeavesThemUnset()
+    {
+        var service = new ImportExportService();
+        const string csv = "Title,Username,Password,Url,Notes,Tags\nOld,me,pw,https://old.test,note,a;b\n";
+
+        var imported = service.ImportCsv(csv);
+
+        Assert.Single(imported);
+        Assert.Equal("Old", imported[0].Title);
+        Assert.Equal(new[] { "a", "b" }, imported[0].Tags);
+        Assert.Null(imported[0].TotpSecret);
+        Assert.False(imported[0].IsFavorite);
+    }
+
     [Fact]
     public void ImportBitwardenJson_ParsesLoginItems()
     {

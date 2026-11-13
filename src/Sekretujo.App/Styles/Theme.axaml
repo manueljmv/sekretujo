@@ -109,6 +109,9 @@
     <Setter Property="CornerRadius" Value="14" />
     <Setter Property="Padding" Value="20" />
   </Style>
+  <Style Selector="Border.overlay">
+    <Setter Property="Background" Value="#CC0A0A0D" />
+  </Style>
   <!-- TextBox -->
   <Style Selector="TextBox">
     <Setter Property="Background" Value="{DynamicResource BrushSurfaceAlt}" />

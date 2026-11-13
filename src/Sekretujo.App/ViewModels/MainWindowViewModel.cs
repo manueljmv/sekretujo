@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly AutoLockService _autoLock;
     private readonly VaultSession _session;
     private readonly AppSettings _appSettings;
+    private readonly ClipboardAutoClearService _clipboardAutoClear;
 
     [ObservableProperty]
     private ViewModelBase? _currentView;
@@ -20,8 +22,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _windowTitle = "Sekretujo";
 
     public MainWindowViewModel(IServiceProvider services, AutoLockService autoLock, VaultSession session,
-        AppSettings appSettings)
+        AppSettings appSettings, ClipboardAutoClearService clipboardAutoClear)
     {
+        _clipboardAutoClear = clipboardAutoClear;
         _services = services;
         _autoLock = autoLock;
         _session = session;
@@ -35,6 +38,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _autoLock.Stop();
         (CurrentView as IDisposable)?.Dispose();
         _session.Close();
+        _ = _clipboardAutoClear.ClearNowAsync();
         var unlock = _services.GetRequiredService<UnlockViewModel>();
         unlock.Unlocked += ShowShell;
         CurrentView = unlock;
@@ -51,6 +55,13 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public void NotifyActivity() => _autoLock.NotifyActivity();
+
+    public bool ConfirmDiscardBefore(Action action) =>
+        CurrentView is ShellViewModel shell && shell.ConfirmDiscardBefore(action);
+
+    public bool HasClipboardSecret => _clipboardAutoClear.HasPending;
+
+    public Task ClearClipboardAsync() => _clipboardAutoClear.ClearNowAsync();
 
     public void Shutdown()
     {

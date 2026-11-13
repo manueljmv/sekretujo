@@ -8,7 +8,7 @@ Gestor de contraseñas y notas de escritorio, multiplataforma (Linux/Windows), s
 - Cifrado AES-256-GCM del vault, con derivación de clave Argon2id a partir de la contraseña maestra.
 - Generador de contraseñas (CSPRNG) con opciones configurables y estimador de fortaleza.
 - Códigos TOTP (2FA) para las entradas que lo requieran.
-- Importación/exportación CSV, y compatibilidad de importación desde Bitwarden y KeePass.
+- Importación/exportación CSV de las contraseñas.
 - Autobloqueo por inactividad y bloqueo manual.
 
 ## Stack técnico

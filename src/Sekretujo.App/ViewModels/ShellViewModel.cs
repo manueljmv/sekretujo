@@ -30,6 +30,8 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private readonly AppSettingsStore _appSettingsStore;
     private readonly HashSet<string> _collapsedTags;
     private bool _collapsedTagsChanged;
+    private bool _keepDetail;
+    private Action? _pendingAfterDiscard;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -51,6 +53,9 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isConfirmingDiscard;
 
     [ObservableProperty]
     private bool _isAutoLockActive;
@@ -111,12 +116,51 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     private void SetTypeFilter(EntryTypeFilter filter) => TypeFilter = filter;
 
     [RelayCommand]
-    private void SelectEntry(EntryListItemViewModel entry) => SelectedEntry = entry;
+    private void SelectEntry(EntryListItemViewModel entry)
+    {
+        var id = entry.Id;
+        if (id == Detail?.Id) return;
+        RunAfterDiscardConfirmation(() => SelectedEntry = Entries.FirstOrDefault(e => e.Id == id));
+    }
+
+    // Returns true when the action was deferred until the user confirms discarding the unsaved edits.
+    public bool ConfirmDiscardBefore(Action action)
+    {
+        if (Detail is not { IsDirty: true }) return false;
+        _pendingAfterDiscard = action;
+        IsConfirmingDiscard = true;
+        return true;
+    }
+
+    private void RunAfterDiscardConfirmation(Action action)
+    {
+        if (!ConfirmDiscardBefore(action)) action();
+    }
+
+    [RelayCommand]
+    private void ConfirmDiscard()
+    {
+        var action = _pendingAfterDiscard;
+        CancelDiscard();
+        Detail?.DiscardCommand.Execute(null);
+        action?.Invoke();
+    }
+
+    [RelayCommand]
+    private void CancelDiscard()
+    {
+        _pendingAfterDiscard = null;
+        IsConfirmingDiscard = false;
+    }
 
     partial void OnSelectedEntryChanged(EntryListItemViewModel? value)
     {
         foreach (var item in Entries)
             item.IsSelected = ReferenceEquals(item, value);
+
+        // Refresh rebuilds every list item, so a new instance for the same entry must not recreate the open form
+        // (and drop its unsaved edits).
+        if (value is null ? _keepDetail : Detail?.Id == value.Id) return;
 
         Detail?.Dispose();
 
@@ -135,7 +179,7 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void Lock() => Locked?.Invoke();
 
-    // Collapsed groups and search text are only written on lock/close: every vault save re-derives the Argon2id key.
+    // Collapsed groups and search text are only written on lock/close, so browsing never rewrites the vault file.
     public void Dispose()
     {
         _autoLockDisplayTimer.Stop();
@@ -149,13 +193,16 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private void NewPassword() => StartNewEntry(new Core.Models.PasswordItem { Title = "Nueva entrada" });
+    private void NewPassword() => RunAfterDiscardConfirmation(
+        () => StartNewEntry(new Core.Models.PasswordItem { Title = "Nueva entrada" }));
 
     [RelayCommand]
-    private void NewNote() => StartNewEntry(new Core.Models.NoteItem { Title = "Nueva nota" });
+    private void NewNote() => RunAfterDiscardConfirmation(
+        () => StartNewEntry(new Core.Models.NoteItem { Title = "Nueva nota" }));
 
     [RelayCommand]
-    private void NewCard() => StartNewEntry(new Core.Models.CardItem { Title = "Nueva tarjeta" });
+    private void NewCard() => RunAfterDiscardConfirmation(
+        () => StartNewEntry(new Core.Models.CardItem { Title = "Nueva tarjeta" }));
 
     [RelayCommand]
     private void OpenSettings()
@@ -187,8 +234,16 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
     {
         if (_session.Data is null) return;
         var index = _session.Data.Entries.FindIndex(e => e.Id == updated.Id);
-        if (index >= 0) _session.Data.Entries[index] = updated;
-        Persist();
+        if (index < 0) return;
+
+        var previous = _session.Data.Entries[index];
+        _session.Data.Entries[index] = updated;
+        if (!Persist())
+        {
+            _session.Data.Entries[index] = previous;
+            return;
+        }
+        Detail?.MarkSaved(updated);
         Refresh(selectAfterRefresh: updated.Id);
     }
 
@@ -201,17 +256,19 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
         Refresh();
     }
 
-    private void Persist()
+    private bool Persist()
     {
-        if (_session.Data is null || _session.FilePath is null || _session.MasterPassword is null) return;
+        if (_session.Data is null || _session.FilePath is null || _session.Key is null) return false;
         try
         {
-            _repository.Save(_session.FilePath, _session.MasterPassword, _session.Data);
+            _repository.Save(_session.FilePath, _session.Key, _session.Data);
             StatusMessage = string.Empty;
+            return true;
         }
         catch (Exception ex)
         {
             StatusMessage = $"No se pudo guardar el vault: {ex.Message}";
+            return false;
         }
     }
 
@@ -219,7 +276,7 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
 
     private void Refresh(Guid? selectAfterRefresh)
     {
-        var preserveId = selectAfterRefresh ?? SelectedEntry?.Id;
+        var preserveId = selectAfterRefresh ?? Detail?.Id;
 
         Entries.Clear();
         Groups.Clear();
@@ -265,7 +322,10 @@ public partial class ShellViewModel : ViewModelBase, IDisposable
             Groups.Add(groupVm);
         }
 
-        SelectedEntry = preserveId is { } id ? Entries.FirstOrDefault(e => e.Id == id) : null;
+        var selected = preserveId is { } id ? Entries.FirstOrDefault(e => e.Id == id) : null;
+        _keepDetail = selected is null && Detail is { IsDirty: true };
+        SelectedEntry = selected;
+        _keepDetail = false;
     }
 
     private void OnGroupPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

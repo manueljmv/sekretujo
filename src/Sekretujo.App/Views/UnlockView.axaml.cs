@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -14,18 +16,31 @@ public partial class UnlockView : UserControl
         Patterns = new[] { "*.vault" }
     };
 
+    // These handlers are async void: an exception escaping them has no caller and would terminate the app.
+    private static string PickerFailedMessage(Exception ex) =>
+        $"No se pudo abrir el selector de archivos: {ex.Message}. Escribe la ruta a mano.";
+
     private async void OnBrowseOpenClicked(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not UnlockViewModel vm) return;
         var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
         if (storage is null) return;
 
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        IReadOnlyList<IStorageFile> files;
+        try
         {
-            Title = "Abrir vault",
-            AllowMultiple = false,
-            FileTypeFilter = new[] { VaultFileType }
-        });
+            files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Abrir vault",
+                AllowMultiple = false,
+                FileTypeFilter = new[] { VaultFileType }
+            });
+        }
+        catch (Exception ex)
+        {
+            vm.ErrorMessage = PickerFailedMessage(ex);
+            return;
+        }
 
         if (files.Count == 0) return;
         vm.VaultPath = files[0].Path.LocalPath;
@@ -38,16 +53,24 @@ public partial class UnlockView : UserControl
         var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
         if (storage is null) return;
 
-        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        IStorageFile? file;
+        try
         {
-            Title = "Crear vault nuevo",
-            DefaultExtension = "vault",
-            FileTypeChoices = new[] { VaultFileType },
-            ShowOverwritePrompt = false
-        });
+            file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Crear vault nuevo",
+                DefaultExtension = "vault",
+                FileTypeChoices = new[] { VaultFileType },
+                ShowOverwritePrompt = false
+            });
+        }
+        catch (Exception ex)
+        {
+            vm.ErrorMessage = PickerFailedMessage(ex);
+            return;
+        }
 
         if (file is null) return;
-        vm.VaultPath = file.Path.LocalPath;
-        vm.CreateNewCommand.Execute(null);
+        vm.BeginCreateNew(file.Path.LocalPath);
     }
 }

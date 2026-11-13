@@ -17,6 +17,7 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly VaultRepository _repository;
     private readonly AutoLockService _autoLock;
     private readonly AppSettings _appSettings;
+    private readonly AppSettingsStore _appSettingsStore;
 
     [ObservableProperty] private int _autoLockMinutes;
     [ObservableProperty] private int _clipboardClearSeconds;
@@ -27,8 +28,10 @@ public partial class SettingsViewModel : ViewModelBase
     public event Action? SettingsChanged;
 
     public SettingsViewModel(ImportExportService importExport, VaultSession session,
-        VaultRepository repository, AutoLockService autoLock, AppSettings appSettings)
+        VaultRepository repository, AutoLockService autoLock, AppSettings appSettings,
+        AppSettingsStore appSettingsStore)
     {
+        _appSettingsStore = appSettingsStore;
         _importExport = importExport;
         _session = session;
         _repository = repository;
@@ -46,6 +49,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _appSettings.AutoLockMinutes = AutoLockMinutes;
         _appSettings.ClipboardClearSeconds = ClipboardClearSeconds;
+        _appSettingsStore.Save(_appSettings);
         _autoLock.Start(TimeSpan.FromMinutes(AutoLockMinutes));
         StatusMessage = "Ajustes aplicados.";
         SettingsChanged?.Invoke();
@@ -75,12 +79,6 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void ImportCsv() => Import(() => _importExport.ImportCsv(File.ReadAllText(FilePath)));
 
-    [RelayCommand]
-    private void ImportBitwarden() => Import(() => _importExport.ImportBitwardenJson(File.ReadAllText(FilePath)));
-
-    [RelayCommand]
-    private void ImportKeePass() => Import(() => _importExport.ImportKeePassCsv(File.ReadAllText(FilePath)));
-
     private void Import(Func<List<Core.Models.PasswordItem>> loader)
     {
         if (_session.Data is null) return;
@@ -88,7 +86,7 @@ public partial class SettingsViewModel : ViewModelBase
         {
             var items = loader();
             _session.Data.Entries.AddRange(items);
-            _repository.Save(_session.FilePath!, _session.MasterPassword!, _session.Data);
+            _repository.Save(_session.FilePath!, _session.Key!, _session.Data);
             StatusMessage = $"Importadas {items.Count} entradas.";
             SettingsChanged?.Invoke();
         }

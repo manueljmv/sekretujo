@@ -111,4 +111,13 @@ public class VaultDataSerializationTests
 
         Assert.Throws<VaultCorruptException>(() => serializer.Deserialize(System.Text.Encoding.UTF8.GetBytes(json)));
     }
+
+    [Fact]
+    public void Deserialize_NewerSchemaVersion_ThrowsVaultCorruptException()
+    {
+        var serializer = new VaultSerializer();
+        var json = $$"""{"SchemaVersion":{{VaultData.CurrentSchemaVersion + 1}},"Entries":[],"Tags":[]}""";
+
+        Assert.Throws<VaultCorruptException>(() => serializer.Deserialize(System.Text.Encoding.UTF8.GetBytes(json)));
+    }
 }

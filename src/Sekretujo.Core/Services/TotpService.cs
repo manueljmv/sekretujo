@@ -15,7 +15,7 @@ public sealed class TotpService
     {
         try
         {
-            var secretBytes = Base32Encoding.ToBytes(base32Secret);
+            var secretBytes = Base32Encoding.ToBytes(Normalize(base32Secret));
             var totp = new Totp(secretBytes);
             var timestamp = (at ?? DateTimeOffset.UtcNow).UtcDateTime;
             var code = totp.ComputeTotp(timestamp);
@@ -30,6 +30,7 @@ public sealed class TotpService
 
     public byte[] GenerateQrCodePng(string base32Secret, string label, string? issuer = null)
     {
+        base32Secret = Normalize(base32Secret);
         try
         {
             Base32Encoding.ToBytes(base32Secret);
@@ -46,4 +47,8 @@ public sealed class TotpService
         var qrData = generator.CreateQrCode(uri, QRCodeGenerator.ECCLevel.Q);
         return new PngByteQRCode(qrData).GetGraphic(20);
     }
+
+    // Services usually display the secret in groups ("JBSW Y3DP ..." or "JBSW-Y3DP-...").
+    private static string Normalize(string base32Secret) =>
+        string.Concat(base32Secret.Where(c => !char.IsWhiteSpace(c) && c != '-'));
 }

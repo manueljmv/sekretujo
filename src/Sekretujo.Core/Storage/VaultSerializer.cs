@@ -11,8 +11,12 @@ public sealed class VaultSerializer
     {
         try
         {
-            return JsonSerializer.Deserialize<VaultData>(plaintext)
-                   ?? throw new VaultCorruptException("El vault está vacío o malformado.");
+            var data = JsonSerializer.Deserialize<VaultData>(plaintext)
+                       ?? throw new VaultCorruptException("El vault está vacío o malformado.");
+            // Saving a newer schema with this version would silently drop the fields it does not know.
+            if (data.SchemaVersion > VaultData.CurrentSchemaVersion)
+                throw new VaultCorruptException("El vault fue creado con una versión más reciente de Sekretujo.");
+            return data;
         }
         catch (VaultCorruptException)
         {

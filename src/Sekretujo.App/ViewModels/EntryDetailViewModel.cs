@@ -78,10 +78,18 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _passwordStrengthValue;
     [ObservableProperty] private IBrush _passwordStrengthColor = Brushes.Transparent;
     [ObservableProperty] private int _generatorLength;
-    [ObservableProperty] private bool _generatorUseUppercase;
-    [ObservableProperty] private bool _generatorUseLowercase;
-    [ObservableProperty] private bool _generatorUseDigits;
-    [ObservableProperty] private bool _generatorUseSymbols;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GeneratePasswordCommand))]
+    private bool _generatorUseUppercase;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GeneratePasswordCommand))]
+    private bool _generatorUseLowercase;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GeneratePasswordCommand))]
+    private bool _generatorUseDigits;
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(GeneratePasswordCommand))]
+    private bool _generatorUseSymbols;
 
     public const int TotpPeriodSeconds = 30;
 
@@ -274,7 +282,10 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
         }
     }
 
-    [RelayCommand]
+    private bool CanGeneratePassword() =>
+        GeneratorUseUppercase || GeneratorUseLowercase || GeneratorUseDigits || GeneratorUseSymbols;
+
+    [RelayCommand(CanExecute = nameof(CanGeneratePassword))]
     private void GeneratePassword()
     {
         var options = new PasswordGeneratorOptions
@@ -314,8 +325,8 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task OpenUrl()
     {
-        if (_launcher is null || string.IsNullOrWhiteSpace(Url)) return;
-        if (Uri.TryCreate(Url, UriKind.Absolute, out var uri))
+        if (_launcher is null) return;
+        if (WebUrl.Normalize(Url) is { } uri)
             await _launcher.LaunchUriAsync(uri);
     }
 
@@ -432,8 +443,13 @@ public partial class EntryDetailViewModel : ViewModelBase, IDisposable
                 ModifiedAt = DateTimeOffset.UtcNow
             }
         };
-        IsDirty = false;
         Saved?.Invoke(entry);
+    }
+
+    public void MarkSaved(VaultEntry saved)
+    {
+        _originalEntry = saved;
+        IsDirty = false;
     }
 
     [RelayCommand]

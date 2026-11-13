@@ -56,11 +56,22 @@
                      Text="{Binding MasterPasswordStrengthLabel}" />
         </Grid>
 
+        <TextBox PlaceholderText="Repite la master password" PasswordChar="•" Text="{Binding ConfirmPassword}"
+                 RevealPassword="{Binding IsPasswordVisible}" IsVisible="{Binding IsCreatingNew}" />
+
         <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource BrushDanger}" TextWrapping="Wrap"
                     IsVisible="{Binding ErrorMessage, Converter={x:Static conv:StringConverters.IsNotNullOrEmpty}}" />
 
+        <Grid ColumnDefinitions="Auto,*" Margin="0,8,0,0" IsVisible="{Binding IsCreatingNew}">
+          <Button Grid.Column="0" Content="Cancelar" Command="{Binding CancelCreateNewCommand}" Margin="0,0,8,0" />
+          <Button Grid.Column="1" Classes="accent" Command="{Binding CreateNewCommand}" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center">
+            <TextBlock Text="Crear bóveda" FontWeight="Bold" />
+          </Button>
+        </Grid>
+
         <Button Classes="accent" Command="{Binding OpenExistingCommand}" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center" Margin="0,8,0,0">
+                HorizontalContentAlignment="Center" Margin="0,8,0,0" IsVisible="{Binding !IsCreatingNew}">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Border Classes="icon" Width="14" Height="14" Background="{DynamicResource BrushOnAccent}">
               <Border.OpacityMask>

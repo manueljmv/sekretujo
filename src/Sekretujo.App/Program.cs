@@ -20,6 +20,9 @@ class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            // xdg-desktop-portal refuses a caller it cannot inspect, and ProcessHardening makes /proc/<pid>
+            // unreadable, so the portal file picker always fails. The GTK dialog runs in-process instead.
+            .With(new X11PlatformOptions { UseDBusFilePicker = false })
 #if DEBUG
             .WithDeveloperTools()
 #endif

@@ -43,6 +43,28 @@ public class TotpServiceTests
         Assert.NotEqual(first.Code, second.Code);
     }
 
+    [Theory]
+    [InlineData("JBSW Y3DP EHPK 3PXP")]
+    [InlineData("jbsw-y3dp-ehpk-3pxp")]
+    [InlineData(" JBSWY3DPEHPK3PXP\n")]
+    public void GetCode_IgnoresGroupingSeparatorsInSecret(string groupedSecret)
+    {
+        var service = new TotpService();
+        var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        Assert.Equal(service.GetCode(ValidSecret, at).Code, service.GetCode(groupedSecret, at).Code);
+    }
+
+    [Fact]
+    public void GenerateQrCodePng_IgnoresGroupingSeparatorsInSecret()
+    {
+        var service = new TotpService();
+
+        Assert.Equal(
+            service.GenerateQrCodePng(ValidSecret, "example.com"),
+            service.GenerateQrCodePng("JBSW Y3DP EHPK 3PXP", "example.com"));
+    }
+
     [Fact]
     public void GetCode_WithInvalidBase32Secret_ThrowsInvalidTotpSecretException()
     {

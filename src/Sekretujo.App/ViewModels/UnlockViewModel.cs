@@ -40,6 +40,14 @@ public partial class UnlockViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isPasswordVisible;
 
+    [ObservableProperty]
+    private bool _isCreatingNew;
+
+    [ObservableProperty]
+    private string _confirmPassword = string.Empty;
+
+    private const string AlreadyOpenMessage = "Esta bóveda ya está abierta en otra ventana de Sekretujo.";
+
     public event Action? Unlocked;
 
     public UnlockViewModel(VaultRepository repository, VaultSession session, AppSettings appSettings,
@@ -84,10 +92,19 @@ public partial class UnlockViewModel : ViewModelBase
             return;
         }
 
+        VaultLock? vaultLock = null;
         try
         {
-            var data = _repository.Load(VaultPath, MasterPassword);
-            _session.Open(VaultPath, MasterPassword, data);
+            vaultLock = VaultLock.TryAcquire(VaultPath);
+            if (vaultLock is null)
+            {
+                ErrorMessage = AlreadyOpenMessage;
+                return;
+            }
+
+            var (data, key) = _repository.Load(VaultPath, MasterPassword);
+            _session.Open(VaultPath, key, data, vaultLock);
+            vaultLock = null;
             MasterPassword = string.Empty;
             RememberVaultPath();
             Unlocked?.Invoke();
@@ -104,6 +121,26 @@ public partial class UnlockViewModel : ViewModelBase
         {
             ErrorMessage = $"No se pudo leer el archivo: {ex.Message}";
         }
+        finally
+        {
+            vaultLock?.Dispose();
+        }
+    }
+
+    public void BeginCreateNew(string vaultPath)
+    {
+        VaultPath = vaultPath;
+        ConfirmPassword = string.Empty;
+        ErrorMessage = string.Empty;
+        IsCreatingNew = true;
+    }
+
+    [RelayCommand]
+    private void CancelCreateNew()
+    {
+        ConfirmPassword = string.Empty;
+        ErrorMessage = string.Empty;
+        IsCreatingNew = false;
     }
 
     [RelayCommand]
@@ -122,18 +159,43 @@ public partial class UnlockViewModel : ViewModelBase
             return;
         }
 
+        if (MasterPassword != ConfirmPassword)
+        {
+            ErrorMessage = "Las dos contraseñas no coinciden.";
+            return;
+        }
+
+        VaultLock? vaultLock = null;
+        VaultKey? key = null;
         try
         {
+            vaultLock = VaultLock.TryAcquire(VaultPath);
+            if (vaultLock is null)
+            {
+                ErrorMessage = AlreadyOpenMessage;
+                return;
+            }
+
             var data = new VaultData();
-            _repository.Save(VaultPath, MasterPassword, data);
-            _session.Open(VaultPath, MasterPassword, data);
+            key = _repository.CreateKey(MasterPassword);
+            _repository.Save(VaultPath, key, data);
+            _session.Open(VaultPath, key, data, vaultLock);
+            vaultLock = null;
+            key = null;
             MasterPassword = string.Empty;
+            ConfirmPassword = string.Empty;
+            IsCreatingNew = false;
             RememberVaultPath();
             Unlocked?.Invoke();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             ErrorMessage = $"No se pudo crear el archivo: {ex.Message}";
+        }
+        finally
+        {
+            key?.Dispose();
+            vaultLock?.Dispose();
         }
     }
 

@@ -7,7 +7,8 @@ namespace Sekretujo.App.Services;
 public sealed class AppSettingsStore
 {
     private static readonly string FilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        // Without Create, a missing ~/.config yields an empty string and the file lands in the working directory.
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create),
         "Sekretujo", "settings.json");
 
     public AppSettings Load()
@@ -16,12 +17,23 @@ public sealed class AppSettingsStore
         {
             if (!File.Exists(FilePath)) return new AppSettings();
             var json = File.ReadAllText(FilePath);
-            return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            return Sanitize(JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings());
         }
         catch (Exception)
         {
             return new AppSettings();
         }
+    }
+
+    // The file can be edited by hand; the ranges match the controls that write these values.
+    private static AppSettings Sanitize(AppSettings settings)
+    {
+        settings.AutoLockMinutes = Math.Clamp(settings.AutoLockMinutes, 1, 120);
+        settings.ClipboardClearSeconds = Math.Clamp(settings.ClipboardClearSeconds, 5, 300);
+        settings.GeneratorLength = Math.Clamp(settings.GeneratorLength, 4, 128);
+        if (!Enum.IsDefined(settings.LastTypeFilter))
+            settings.LastTypeFilter = ViewModels.EntryTypeFilter.All;
+        return settings;
     }
 
     public void Save(AppSettings settings)

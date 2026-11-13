@@ -6,43 +6,86 @@ namespace Sekretujo.Core.Tests;
 
 public class CryptoServiceTests
 {
-    [Fact]
-    public void Encrypt_Then_Decrypt_WithCorrectPassword_RoundTrips()
-    {
-        var crypto = new CryptoService();
-        var plaintext = Encoding.UTF8.GetBytes("hello vault");
+    private readonly CryptoService _crypto = new();
 
-        var payload = crypto.Encrypt("correct-password", plaintext);
-        var decrypted = crypto.Decrypt("correct-password", payload);
+    [Fact]
+    public void Encrypt_Then_Decrypt_WithSameKey_RoundTrips()
+    {
+        var plaintext = Encoding.UTF8.GetBytes("hello vault");
+        using var key = _crypto.CreateKey("correct-password");
+
+        var payload = _crypto.Encrypt(key, plaintext);
+        var decrypted = _crypto.Decrypt(key, payload);
 
         Assert.Equal(plaintext, decrypted);
     }
 
     [Fact]
-    public void Decrypt_WithWrongPassword_ThrowsVaultUnlockException()
+    public void DeriveKey_WithSamePasswordSaltAndParameters_DecryptsWhatAnotherKeyEncrypted()
     {
-        var crypto = new CryptoService();
-        var payload = crypto.Encrypt("correct-password", Encoding.UTF8.GetBytes("secret"));
+        using var key = _crypto.CreateKey("correct-password");
+        var payload = _crypto.Encrypt(key, Encoding.UTF8.GetBytes("secret"));
 
-        Assert.Throws<VaultUnlockException>(() => crypto.Decrypt("wrong-password", payload));
+        using var rederived = _crypto.DeriveKey("correct-password", key.Salt, key.Kdf);
+
+        Assert.Equal("secret", Encoding.UTF8.GetString(_crypto.Decrypt(rederived, payload)));
     }
 
     [Fact]
-    public void Decrypt_WithEmptyPassword_ThrowsVaultUnlockException()
+    public void Decrypt_WithKeyFromWrongPassword_ThrowsVaultUnlockException()
     {
-        var crypto = new CryptoService();
-        var payload = crypto.Encrypt("correct-password", Encoding.UTF8.GetBytes("secret"));
+        using var key = _crypto.CreateKey("correct-password");
+        var payload = _crypto.Encrypt(key, Encoding.UTF8.GetBytes("secret"));
 
-        Assert.Throws<VaultUnlockException>(() => crypto.Decrypt(string.Empty, payload));
+        using var wrong = _crypto.DeriveKey("wrong-password", key.Salt, key.Kdf);
+
+        Assert.Throws<VaultUnlockException>(() => _crypto.Decrypt(wrong, payload));
+    }
+
+    [Fact]
+    public void DeriveKey_WithEmptyPassword_ThrowsVaultUnlockException()
+    {
+        Assert.Throws<VaultUnlockException>(() => _crypto.CreateKey(string.Empty));
     }
 
     [Fact]
     public void Decrypt_WithTamperedCiphertext_ThrowsVaultUnlockException()
     {
-        var crypto = new CryptoService();
-        var payload = crypto.Encrypt("correct-password", Encoding.UTF8.GetBytes("secret"));
+        using var key = _crypto.CreateKey("correct-password");
+        var payload = _crypto.Encrypt(key, Encoding.UTF8.GetBytes("secret"));
         payload.Ciphertext[0] ^= 0xFF;
 
-        Assert.Throws<VaultUnlockException>(() => crypto.Decrypt("correct-password", payload));
+        Assert.Throws<VaultUnlockException>(() => _crypto.Decrypt(key, payload));
+    }
+
+    [Fact]
+    public void Decrypt_WithDifferentAssociatedData_ThrowsVaultUnlockException()
+    {
+        using var key = _crypto.CreateKey("correct-password");
+        var payload = _crypto.Encrypt(key, Encoding.UTF8.GetBytes("secret"), new byte[] { 1, 2, 3 });
+
+        Assert.Throws<VaultUnlockException>(() => _crypto.Decrypt(key, payload, new byte[] { 1, 2, 4 }));
+    }
+
+    [Fact]
+    public void Encrypt_UsesFreshNonceEachTime()
+    {
+        using var key = _crypto.CreateKey("correct-password");
+        var plaintext = Encoding.UTF8.GetBytes("secret");
+
+        var first = _crypto.Encrypt(key, plaintext);
+        var second = _crypto.Encrypt(key, plaintext);
+
+        Assert.NotEqual(first.Nonce, second.Nonce);
+        Assert.NotEqual(first.Ciphertext, second.Ciphertext);
+    }
+
+    [Fact]
+    public void Encrypt_WithDisposedKey_ThrowsObjectDisposedException()
+    {
+        var key = _crypto.CreateKey("correct-password");
+        key.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _crypto.Encrypt(key, new byte[1]));
     }
 }

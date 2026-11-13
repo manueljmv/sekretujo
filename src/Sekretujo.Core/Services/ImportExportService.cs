@@ -6,15 +6,18 @@ namespace Sekretujo.Core.Services;
 
 public sealed class ImportExportService
 {
+    private const string FormulaPrefixes = "=+-@\t";
+
     public string ExportCsv(IEnumerable<PasswordItem> items)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Title,Username,Password,Url,Notes,Tags");
+        sb.AppendLine("Title,Username,Password,Url,Notes,Tags,Totp,Favorite");
         foreach (var item in items)
         {
             sb.AppendLine(string.Join(',',
                 CsvField(item.Title), CsvField(item.Username), CsvField(item.Password, neutralizeFormulas: false),
-                CsvField(item.Url), CsvField(item.Notes), CsvField(string.Join(';', item.Tags))));
+                CsvField(item.Url), CsvField(item.Notes), CsvField(string.Join(';', item.Tags)),
+                CsvField(item.TotpSecret ?? string.Empty), item.IsFavorite ? "true" : "false"));
         }
         return sb.ToString();
     }
@@ -26,14 +29,17 @@ public sealed class ImportExportService
         foreach (var fields in rows.Skip(1))
         {
             if (fields.Count == 0 || fields.All(string.IsNullOrEmpty)) continue;
+            string Text(int index) => RestoreFormulaPrefix(Field(fields, index));
             items.Add(new PasswordItem
             {
-                Title = Field(fields, 0),
-                Username = Field(fields, 1),
+                Title = Text(0),
+                Username = Text(1),
                 Password = Field(fields, 2),
-                Url = Field(fields, 3),
-                Notes = Field(fields, 4),
-                Tags = Field(fields, 5) is { Length: > 0 } tags ? tags.Split(';').ToList() : new()
+                Url = Text(3),
+                Notes = Text(4),
+                Tags = Text(5) is { Length: > 0 } tags ? tags.Split(';').ToList() : new(),
+                TotpSecret = Text(6) is { Length: > 0 } totp ? totp : null,
+                IsFavorite = bool.TryParse(Field(fields, 7), out var favorite) && favorite
             });
         }
         return items;
@@ -100,12 +106,23 @@ public sealed class ImportExportService
 
     private static string CsvField(string value, bool neutralizeFormulas = true)
     {
-        if (neutralizeFormulas && value.Length > 0 && "=+-@\t".Contains(value[0]))
+        if (neutralizeFormulas && StartsLikeFormula(value))
             value = "'" + value;
 
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
             return $"\"{value.Replace("\"", "\"\"")}\"";
         return value;
+    }
+
+    private static string RestoreFormulaPrefix(string value) =>
+        value.StartsWith('\'') && StartsLikeFormula(value.AsSpan(1)) ? value[1..] : value;
+
+    // Leading quotes are skipped so a value that already starts with ' gets prefixed too; without that,
+    // RestoreFormulaPrefix could not tell an added ' from an original one.
+    private static bool StartsLikeFormula(ReadOnlySpan<char> value)
+    {
+        value = value.TrimStart('\'');
+        return value.Length > 0 && FormulaPrefixes.Contains(value[0]);
     }
 
     private static List<List<string>> ParseCsvRows(string csv)
